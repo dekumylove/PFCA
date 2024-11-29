@@ -31,10 +31,8 @@ tensor(sample_num, visit_num, feature_num, target_num, path_num, K, rel_num)
 * [UMLS](https://www.nlm.nih.gov/research/umls/index.html)
 
 ### Data Preprocess
-Please use datapreprocess_kg.py to process knowledge graph. To generate the adjancent matrix of the knowledge graph, call the functions following the order:
-1. ***extract_relations*** 
-2. ***extract_triplets***
-3. ***generate_adjacent_matrix***
+Please use datapreprocess_iii_kg.py and datapreprocess_iv_kg.py to process knowledge graph. To generate the adjancent matrix of the knowledge graph, just run the corresponding python file:
+1. `python datapreprocess_iii_kg.py` or `python datapreprocess_iv_kg.py`
 
 After processing the knowledge graph, please use datapreprocess_iii.py and datapreprocess_iv.py to process MIMIC-III and MIMIC-IV datasets. Specifically:
 1. Call the functions ***generate_adjacent_list*** and ***generate_paths*** to generate paths connecting the patient features to the target features.
@@ -50,9 +48,10 @@ After processing the knowledge graph, please use datapreprocess_iii.py and datap
 | LSTM                 | model/lstm.py                                                                                     | [LSTM]()                                                                         |
 | Dipole               | model/Dipole.py                                                                                   | [Dipole](https://arxiv.org/pdf/1706.05764)                                       |
 | Retain               | model/retain.py                                                                                   | [Retain](https://arxiv.org/pdf/1608.05745)                                       |
+| HAP                  | model/HAP.py                                                                                      | [HAP](https://dl.acm.org/doi/10.1145/3394486.3403067)                            |
 | MedPath              | model/medpath.py                                                                                  | [MedPath](https://dl.acm.org/doi/pdf/10.1145/3442381.3449860)                    |
 | GraphCare            | model/graphcare.py                                                                                | [GraphCare](https://arxiv.org/pdf/2305.12788)                                    |
-| HAR                  | model/stageaware.py                                                                               | [HAR](https://ieeexplore.ieee.org/document/10236511)         |
+| HAR                  | model/stageaware.py                                                                               | [HAR](https://ieeexplore.ieee.org/document/10236511)                             |
 
 #### Running Scripts
 
