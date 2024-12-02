@@ -37,10 +37,6 @@ class GraphAttentionLayer(nn.Module):
         device_id=1,
         device=torch.device("cuda"),
     ):
-        """
-        ninfeat: 输入特征的维度
-        noutfeat: 输出特征的维度
-        """
         super().__init__()
 
         self.W = nn.ParameterList()
@@ -78,9 +74,9 @@ class GraphAttentionLayer(nn.Module):
 
     def path_calculation_filtering(self, rel_index, feature_embed, h_time):
         """
-        :param rel_index: (bs, num_visit, num_feat, num_target, num_path, K, num_rel + 1)
-        :param feature_embed: (bs, num_visit, num_feat, hidden_dim)
-        :param h_time: (bs, num_visit, outfeat)
+        :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
+        :param feature_embed: feature embeddings
+        :param h_time: patient hidden states obtained from the time-series module
         """
         params = torch.stack([param for param in self.W], dim = 0)
         bs, nv, mf, mt, np, K, nr = rel_index.size()
@@ -107,7 +103,7 @@ class GraphAttentionLayer(nn.Module):
     
     def joint_impact(self, M_j):
         """
-        :param M_j: (bs, num_visit, num_feat, hidden_dim)
+        :param M_j: messages transmitted through paths
         """
         bs, nv, mf, hd = M_j.size()
         normalized_embeddings = F.normalize(M_j, p=2, dim=-1)
@@ -121,8 +117,8 @@ class GraphAttentionLayer(nn.Module):
     
     def causal_intervention(self, h_time, M_j, intervention = "random_sample"):
         """
-        :param M_j: tensor(bs, num_visit, num_feat, hidden_dim)
-        :param h_time: tensor(bs, num_visit, outfeat)
+        :param M_j: messages transmitted through paths
+        :param h_time: patient hidden states obtained from the time-series module
         """
         h_time_2 = h_time.unsqueeze(dim=-2).repeat(1, 1, M_j.size(2), 1)
         attn_scores = self.causal_mlp(torch.cat([h_time_2, M_j], dim=-1)).squeeze(dim=-1)
@@ -147,9 +143,9 @@ class GraphAttentionLayer(nn.Module):
 
     def forward(self, feature_embed, h_time, rel_index, intervention):
         """
-        :param rel_index: tensor(bs, num_visit, num_feat, num_target, num_path, K, num_rel + 1)
-        :param feature_embed:   (bs, num_visit, num_feat, hidden_dim)
-        :param h_time: tensor(bs, num_visit, outfeat)
+        :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
+        :param feature_embed: feature embeddings
+        :param h_time: patient hidden states obtained from the time-series module
         """
 
         # path calculation and filtering
@@ -207,12 +203,11 @@ class GATModel(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, feature_index, rel_index, feat_index, h_time, intervention = "random_sample"):
+    def forward(self, rel_index, feat_index, h_time, intervention = "random_sample"):
         """
-        :param feature_index : (bs, num_visit, num_feat)
-        :param rel_index: (bs, num_visit, num_feat, num_target, num_path, K, num_rel + 1)
-        :param feat_index: (bs, num_visit, num_feat, num_feat)
-        :param h_time: (bs, num_visit, output_dim)
+        :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
+        :param feat_index: patient feature index
+        :param h_time: patient hidden states obtained from the time-series module
         """
         # 1. feature embeddings
         embeds = self.embedding.embedding.weight

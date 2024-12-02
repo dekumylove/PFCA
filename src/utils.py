@@ -17,7 +17,7 @@ def get_accuracy(y, pred):
 
     micro_accuracy = roc_auc_score(y_label, y_pred, average="micro")
     macro_accuracy = roc_auc_score(y_label, y_pred, average="macro")
-    fpr, tpr, thresholds = roc_curve(y_label, y_pred)
+    fpr, tpr, _ = roc_curve(y_label, y_pred)
     roc_auc = auc(fpr, tpr)
     precision_mean = precision_score(y_label, y_pred, average="micro")
     recall_mean = recall_score(y_label, y_pred, average="micro")

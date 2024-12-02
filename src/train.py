@@ -30,11 +30,6 @@ def check_gradients(model):
             print(f'{name}, grad_fn={param.grad_fn}, grad={param.grad.data.sum()}')
 
 def evaluate(eval_model, dataloader, device, only_dipole, p, adj):
-    """
-    在一次batch中
-    y_pred: (batch_size, dignosis_size)
-    an exampe: [[1,0,0,0,0,1,...], [0,1,0,0,1,0,1], ...]
-    """
     eval_model.eval()
     y_label = []
     y_pred = []

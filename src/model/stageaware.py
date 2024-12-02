@@ -56,10 +56,10 @@ class StageAware(nn.Module):
 
     def forward(self, features, feat_index, neighbor_index, rel_index, h_time):
         """
-        :param features: tensor(bs, num_visit, num_feat) one-hot vector
-        :param feat_index: tensor(bs, num_visit, max_feat, num_feat) one-hot vector
-        :param neighbor_index: tensor(bs, num_visit, max_feat, max_target, num_feat)    one-hot vector
-        :param rel_index: tensor(bs, num_visit, max_feat, max_target, num_rel)    one-hot vector
+        :param features: patient multi-hot EHR medical records
+        :param feat_index: patient feature index
+        :param neighbor_index: prediction targets multi-hot vector
+        :param rel_index: relations types between patient features and target features
         """
         h_time = torch.mean(h_time, dim=1)
         hidden_state_1 = h_time.unsqueeze(dim = 1).repeat(1, self.num_rel, 1)

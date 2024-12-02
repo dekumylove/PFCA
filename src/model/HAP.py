@@ -60,8 +60,8 @@ class HAP(nn.Module):
 
     def forward(self, p_, p2c):
         """
-        p_: (batch_size, num_visit, num_feat)
-        p2c: (batch_size, num_visit, num_feat, num_child)
+        p_: parent features multi-hot vector
+        p2c: parent to children features multi-hot vector
         """
         parent_emb = self.embedding(p_.long())
         child_emb = self.embedding(p2c.long())

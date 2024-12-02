@@ -71,9 +71,9 @@ class GraphAttentionLayer(nn.Module):
 
     def forward(self, source_embed, rel_index, s):
         """
-        :param rel_index: tensor(bs, num_visit, max_feat, max_target, num_path, K, num_rel) 所有路径
-        :param source_embed:   (bs, num_visit, max_target, max_feat, hidden_dim)
-        :param s=h_time: tensor(bs, num_visit, output_dim) 时间序列模型得到的每个visit的隐藏状态
+        :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
+        :param source_embed: feature embeddings
+        :param s: patient hidden states obtained from the time-series module
         :return:        FloatTensor B*F*(headxE2)
         """
 
@@ -132,9 +132,9 @@ class MedPath(nn.Module):
 
     def forward(self, neighbor_index, rel_index, h_time):
         """
-        :param feature_index : tensor(bs, num_visit, num_feat)
-        :param neighbor_index: tensor(bs, num_visit, max_feat, max_target, num_feat)
-        :param rel_index: tensor(bs, num_visit, max_feat, max_target, num_path, K, num_rel)
+        :param feature_index : patient multi-hot EHR records in the PKGs
+        :param neighbor_index: prediction targets multi-hot vector
+        :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
         """
         # 1. embedding source
         embeds = self.embedding.embedding.weight

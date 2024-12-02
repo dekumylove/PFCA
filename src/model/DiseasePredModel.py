@@ -47,9 +47,9 @@ class DiseasePredModel(nn.Module):
 
     def forward(self, feature_index, rel_index, feat_index, only_dipole, p):
         """
-        :param feature_index : tensor(bs, num_visit, num_feat) multi-hot vector x_t
-        :param rel_index: tensor(bs, num_visit, num_feat, num_target, num_path, K, num_rel + 1)
-        :param feat_index: (bs, num_visit, num_feat, num_feat)
+        :param feature_index : patient multi-hot EHR medical records
+        :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
+        :param feat_index: patient feature index
         """
 
         lstm_out, h_time = self.dipole(feature_index)
@@ -57,7 +57,7 @@ class DiseasePredModel(nn.Module):
             return self.out_activation(lstm_out)
         else:
             lstm_out = self.Wlstm(lstm_out)
-            g_i, g_c, g_t, path_attentions, causal_attentions = self.pkgat(feature_index, rel_index, feat_index, h_time)
+            g_i, g_c, g_t, path_attentions, causal_attentions = self.pkgat(rel_index, feat_index, h_time)
 
             kg_out_i = self.Wkg(g_i)
             kg_out_c = self.Wkg(g_c)
@@ -75,8 +75,8 @@ class DiseasePredModel(nn.Module):
         
     def interpret(self, path_attentions, causal_attentions, top_k=1):
         """
-        :param path_attentions: (bs, num_visit, num_feat, num_target, num_path)
-        :param causal_attentions: (bs, num_visit, max_feat)
+        :param path_attentions: path attention weight in a sample
+        :param causal_attentions: causal attention of each feature
         """
         bs, _, _ = causal_attentions.size()
         path_attentions = torch.einsum('bvf, bvftp -> bvftp', causal_attentions, path_attentions)

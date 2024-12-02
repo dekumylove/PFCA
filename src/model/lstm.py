@@ -32,9 +32,6 @@ class LSTM_Model(nn.Module):
             self.out_activation = nn.Softmax(1)
     
     def forward(self, x):
-        """
-        :param x: (batch_size, num_visit, num_feat)
-        """
         self.LSTM.flatten_parameters()
 
         lstm_in = x  

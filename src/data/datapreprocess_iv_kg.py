@@ -8,14 +8,7 @@ import requests
 def extract_relations():
     """
     extract relations according to diagnosis, medication, or procedure cui
-    """
-
-    # with open('../data/mimic-iv/pro_cui.pkl', 'rb') as f:
-    #     pro_cui = pickle.load(f)
-    # with open('../data/mimic-iv/dia_cui.pkl', 'rb') as f:
-    #     dia_cui = pickle.load(f)
-    # with open('../data/mimic-iv/drug_cui.pkl', 'rb') as f:
-    #     drug_cui = pickle.load(f)  
+    """ 
     with open('../data/mimic-iv/text_cui.pkl', 'rb') as f:
         text_cui = pickle.load(f)
     text_cui = text_cui.values()
@@ -98,41 +91,10 @@ def generate_adjacent_matrix():
     """
     generate adjacent matrix of the knowledge graph
     """
+    with open('../data/mimic-iv/text_cui.pkl', 'rb') as f:
+        text_cui = pickle.load(f)
 
-    #-------------------------------------------------------------------MIMIC-IV-------------------------------
-    # with open('../data/mimic-iv/text_cui.pkl', 'rb') as f:
-    #     text_cui = pickle.load(f)
-
-    # with open('../data/mimic-iv/relations.pkl', 'rb') as f:
-    #     triples = pickle.load(f)
-
-    # adj_m = torch.zeros(size = (len(text_cui), len(text_cui)))  #init adjacent matrix
-    # cui_values = list(text_cui.values())
-    # relation_type = {}
-    # edge_num = 0
-    # for k, v in tqdm(triples.items(), total = len(triples), desc = "generating adjacent matrix"):
-    #     cui = k.split(',')
-    #     if cui[0] in cui_values and cui[1] in cui_values:
-    #         edge_num += 1
-    #         if v not in relation_type:
-    #             relation_type[v] = len(relation_type) + 1
-    #         index_1 = cui_values.index(cui[0])
-    #         index_2 = cui_values.index(cui[1])
-    #         adj_m[index_1][index_2] = relation_type[v]
-
-    # with open('../data/mimic-iv/adjacent_matrix.pkl', 'wb') as f:
-    #     pickle.dump(adj_m, f)
-    #-------------------------------------------------------------------MIMIC-III-------------------------------
-    with open('../data/mimic-iii/dia_cui.pkl', 'rb') as f:
-        dia_cui = pickle.load(f)
-    with open('../data/mimic-iii/pro_cui.pkl', 'rb') as f:
-        pro_cui = pickle.load(f)
-    with open('../data/mimic-iii/drug_cui.pkl', 'rb') as f:
-        drug_cui = pickle.load(f)
-
-    text_cui = {**dia_cui, **pro_cui, **drug_cui}
-
-    with open('../data/mimic-iii/triples.pkl', 'rb') as f:
+    with open('../data/mimic-iv/relations.pkl', 'rb') as f:
         triples = pickle.load(f)
 
     adj_m = torch.zeros(size = (len(text_cui), len(text_cui)))  #init adjacent matrix
@@ -149,5 +111,9 @@ def generate_adjacent_matrix():
             index_2 = cui_values.index(cui[1])
             adj_m[index_1][index_2] = relation_type[v]
 
-    with open('../data/mimic-iii/adjacent_matrix.pkl', 'wb') as f:
+    with open('../data/mimic-iv/adjacent_matrix.pkl', 'wb') as f:
         pickle.dump(adj_m, f)
+if __name__ == '__main__':
+    extract_relations()
+    extract_triplets()
+    generate_adjacent_matrix()

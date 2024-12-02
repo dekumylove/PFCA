@@ -16,7 +16,7 @@ class Embedding(nn.Module):
 
 
 class GraphCare(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_rel=11, num_feat=1992, num_visit=6, reduced_dim=256, gamma=0.1, dropout=0.3, max_feat=12, bidirectional=False, device=torch.device('cuda')):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_rel=11, num_feat=1992, num_visit=6, reduced_dim=256, gamma=0.1, dropout=0.3, max_feat=12):
         super(GraphCare, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -57,9 +57,9 @@ class GraphCare(nn.Module):
 
     def forward(self, feat_index, neighbor_index, rel_index):
         """
-        :param feat_index: tensor(bs, num_visit, max_feat, num_feat) multi-hot vector
-        :param neighbor_index: tensor(bs, num_visit, max_feat, max_target, num_feat)    one-hot vector
-        :param rel_index: tensor(bs, num_visit, max_feat, max_target, num_rel)    multi-hot vector
+        :param feat_index: patient feature index
+        :param neighbor_index: prediction targets multi-hot vector
+        :param rel_index: relations types between patient features and target features
         """
         #node-level attn
         alpha = torch.einsum('n, bvmn -> bvm', self.W_alpha, feat_index)

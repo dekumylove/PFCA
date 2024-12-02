@@ -256,8 +256,6 @@ if __name__ == "__main__":
     print("loading dataset...")
     with open('/data/wanghao/KDD2025/kdd_data/mimic-iii/graphcare_data/readmission_feat_index_rocauc.pkl', 'rb') as f:
         feat_index = pickle.load(f)
-    # with open('/data/wanghao/KDD2025/kdd_data/mimic-iii/graphcare_data/readmission_rel_index.pkl', 'rb') as f:
-    #     rel_index = pickle.load(f)
     with open('/data/wanghao/KDD2025/kdd_data/mimic-iii/graphcare_data/readmission_neighbor_index_rocauc.pkl', 'rb') as f:
         neighbor_index = pickle.load(f)
     
@@ -266,7 +264,6 @@ if __name__ == "__main__":
     p2c = torch.load(os.path.join(base_path, 'hap_data/rp_p2c_rocauc.pt'))
     features = torch.load(os.path.join(base_path, 'readmission_features_one_hot_rocauc.pt'))
     rel_index = torch.load(os.path.join(base_path, f'readmission_rel_index_{args.K}_rocauc.pt'))
-    # feat_index = torch.load(os.path.join(base_path, f'readmission_feat_index_{args.K}.pt'))
     labels = torch.load(os.path.join(base_path, f'readmission_label_one_hot_rocauc.pt'))
 
     main(args, p, p2c, features, rel_index, neighbor_index, feat_index, labels)
