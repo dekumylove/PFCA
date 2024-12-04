@@ -2,6 +2,7 @@ import pickle
 import torch
 from tqdm import tqdm
 import pandas as pd
+import argparse
 
 with open('../data/mimic-iii/code_map_10.pkl', 'rb') as f:
     code_map = pickle.load(f)
@@ -70,6 +71,24 @@ def generate_one_hot():
             features_one_hot.append(window_one_hot)
 
         return features_one_hot, label_one_hot
+    
+    def generate_one_hot():
+        features_one_hot_list = []
+        label_one_hot_list = []
+        for key, sample in tqdm(samples_grouped, total=len(samples_grouped), desc="Generating samples' one-hot encoddings"):
+            features_one_hot, label_one_hot = generate_sample_one_hot(sample, dim=2850)
+            features_one_hot_list.append(features_one_hot)
+            label_one_hot_list.append(label_one_hot)
+        
+        return features_one_hot_list, label_one_hot_list
+
+    features_one_hot_list, label_one_hot_list = generate_one_hot()
+
+    print(len(features_one_hot_list), len(label_one_hot_list))
+    assert len(features_one_hot_list) == len(label_one_hot_list)
+
+    torch.save(features_one_hot_list, 'data/mimic-iii/features_one_hot.pt')
+    torch.save(label_one_hot_list, 'data/mimic-iii/label_one_hot.pt')
 
 def generate_adjacent_list():
     """load adjacent matrix and convert matrix to adjacent list"""
@@ -87,7 +106,7 @@ def generate_adjacent_list():
 
 def generate_paths(K=3):
     """
-    generate path using the adjacent list
+    generate paths using the adjacent list
     :param K: The length of the path
     """
 
@@ -207,84 +226,10 @@ def generate_rel_index(num_feat = 2850, max_feat = 12, num_rel = 12, K = 4, num_
         paths.append(sample_path)
 
     torch.save(rel_index, f'../data/mimic-iii/rel_index_{K}.pt')
-    torch.save(feat_index, f'../data/mimic-iii/feat_index_{K}.pt')             
+    torch.save(feat_index, f'../data/mimic-iii/feat_index_{K}.pt')
 
-def filter_label():
-    """filter label that is imbalanced to measure the metrics"""
-
-    labels = torch.load('../data/mimic-iii/label_one_hot.pt')
-    labels_C = torch.cat(labels, dim = 0)
-    labels_C = torch.sum(labels_C, dim = 0)
-    values, indices = torch.topk(labels_C, 10, largest=False)
-
-    top = pd.read_csv('../data/mimic-iii/top_diagnoses.csv')
-    icd = top['Diagnosis']
-    target_idx = [code_map[i] for i in icd]
-    filter_idx = indices.tolist()
-    target = [item for i, item in enumerate(target_idx) if i not in filter_idx]
-
-    return target
-
-def generate_knowledge_driven_data(max_feat = 10, num_feat = 2850, max_target = 4, num_rel = 11):
-    """
-    generate graphcare, har, medpath data
-    :param num_feat:          The number of the medical feature
-    :param max_feat:          The maximum number of the patient feature in a visit
-    :param num_rel:           The number of the relation types
-    :param max_target:        The maximum number of the target linked with a feature
-    """
-    
-    with open('../data/mimic-iii/adjacent_matrix.pkl', 'rb') as f:
-        adj = pickle.load(f)
-    features = torch.load('../data/mimic-iii/features_one_hot.pt')
-
-    feat_index = []
-    rel_index = []
-    neighbor_index = []
-
-    # generate for each sample
-    for sample in tqdm(features, total=len(features), desc="generating knowledge_driven_data"):
-        sample_f_index = []
-        sample_n_index = []
-        sample_r_index = []
-        for visit in sample:
-            visit_f_index = torch.zeros(size=(max_feat, num_feat))
-            visit_n_index = torch.zeros(size=(max_feat, max_target, num_feat))
-            visit_r_index = torch.zeros(size=(max_feat, max_target, num_rel))
-            feat_num = 0
-            for i in range(visit.shape[1]):
-                if visit[0][i] != 0:
-                    visit_f_index[feat_num][i] = 1
-                    target_num = 0
-                    for j in range(adj.shape[1]):
-                        if adj[i][j] != 0:
-                            visit_n_index[feat_num][target_num][j] = 1
-                            visit_r_index[feat_num][target_num][int(adj[i][j]) - 1] = 1
-                            target_num += 1
-                            if target_num >= max_target:
-                                break
-                    feat_num += 1
-                    if feat_num >= max_feat:
-                        break
-            sample_f_index.append(visit_f_index)
-            sample_n_index.append(visit_n_index)
-            sample_r_index.append(visit_r_index)
-        sample_f_index = torch.stack(sample_f_index, dim=0)
-        sample_n_index = torch.stack(sample_n_index, dim=0)
-        sample_r_index = torch.stack(sample_r_index, dim=0)
-        feat_index.append(sample_f_index)
-        rel_index.append(sample_r_index)
-        neighbor_index.append(sample_n_index)
-
-    with open('../data/mimic-iii/feat_index.pkl', 'wb') as f:
-        pickle.dump(feat_index, f)
-    with open('../data/mimic-iii/rel_index.pkl', 'wb') as f:
-        pickle.dump(rel_index, f)
-    with open('../data/mimic-iii/neighbor_index.pkl', 'wb') as f:
-        pickle.dump(neighbor_index, f)
-
-def generate_drugrecommendation_data():
-    """generate_drugrecommendation_data"""
+def generate_medicationrecommendation_data():
+    """generate medication recommendation data"""
     
     features = torch.load('../data/mimic-iii/features_one_hot.pt')
     drug_count = {}
@@ -306,7 +251,7 @@ def generate_drugrecommendation_data():
     drugrecommendation_label_one_hot = []
 
     # generate data for each sample
-    for sample in tqdm(features, total=len(features), desc="generating drugrecommendation data"):
+    for sample in tqdm(features, total=len(features), desc="generating medicationrecommendation data"):
         sample_feature = []
         label = torch.zeros(size=(1, 90))
         for visit_index, visit in enumerate(sample):
@@ -322,8 +267,8 @@ def generate_drugrecommendation_data():
                 sample_feature.append(visit)
         drugrecommendation_features_one_hot.append(sample_feature)
         drugrecommendation_label_one_hot.append(label)
-    torch.save(drugrecommendation_features_one_hot, '../data/mimic-iii/drugrecommendation_features_one_hot.pt')
-    torch.save(drugrecommendation_label_one_hot, '../data/mimic-iii/drugrecommendation_label_one_hot.pt')
+    torch.save(drugrecommendation_features_one_hot, '../data/mimic-iii/medicationrecommendation_features_one_hot.pt')
+    torch.save(drugrecommendation_label_one_hot, '../data/mimic-iii/medicationrecommendation_label_one_hot.pt')
 
 #----------------------------------------------------------------------generate_readmission_data-----------------------------------------------------------------------------------------------
 
@@ -429,3 +374,19 @@ def generate_readmission_rel_index(num_feat = 2850, max_feat = 16, num_rel = 12,
     print(len(feat_index))
     torch.save(rel_index, f'readmission_rel_index_{K}.pt')
     torch.save(feat_index, f'readmission_feat_index_{K}.pt')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Data preprocessing')
+    parser.add_argument('--task', type=str, default="diagnosis prediction", help='task description')
+    args = parser.parse_args()
+
+    if args.task == "diagnosis prediction":
+        generate_one_hot()
+        generate_adjacent_list()
+        generate_paths()
+        generate_rel_index()
+    elif args.task == "medication recommendation":
+        generate_medicationrecommendation_data()
+    elif args.task == "readmission prediction":
+        generate_readmission_paths()
+        generate_readmission_rel_index()

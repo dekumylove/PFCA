@@ -2,6 +2,7 @@ import pickle
 import torch
 from tqdm import tqdm
 import pandas as pd
+import argparse
 
 with open('../data/mimic-iv/code_map_10.pkl', 'rb') as f:
     code_map = pickle.load(f)
@@ -70,6 +71,24 @@ def generate_one_hot():
             features_one_hot.append(window_one_hot)
 
         return features_one_hot, label_one_hot
+    
+    def generate_one_hot():
+        features_one_hot_list = []
+        label_one_hot_list = []
+        for key, sample in tqdm(samples_grouped, total=len(samples_grouped), desc="Generating samples' one-hot encoddings"):
+            features_one_hot, label_one_hot = generate_sample_one_hot(sample, dim = 1992)
+            features_one_hot_list.append(features_one_hot)
+            label_one_hot_list.append(label_one_hot)
+        
+        return features_one_hot_list, label_one_hot_list
+
+    features_one_hot_list, label_one_hot_list = generate_one_hot()
+
+    print(len(features_one_hot_list), len(label_one_hot_list))
+    assert len(features_one_hot_list) == len(label_one_hot_list)
+
+    torch.save(features_one_hot_list, 'data/mimic-iv/features_one_hot.pt')
+    torch.save(label_one_hot_list, 'data/mimic-iv/label_one_hot.pt')
 
 def generate_adjacent_list():
     """load adjacent matrix and convert matrix to adjacent list"""
@@ -430,3 +449,61 @@ def generate_readmission_rel_index(num_feat = 1992, max_feat = 16, num_rel = 12,
     print(len(feat_index))
     torch.save(rel_index, f'readmission_rel_index_{K}.pt')
     torch.save(feat_index, f'readmission_feat_index_{K}.pt')
+
+def generate_medicationrecommendation_data():
+    """generate medication recommendation data"""
+    
+    features = torch.load('../data/mimic-iv/features_one_hot.pt')
+    drug_count = {}
+    for sample in features:
+        for visit in sample:
+            for i in range(774):
+                if visit[0][1218+i] != 0:
+                    k = 1218+i
+                    if k not in drug_count:
+                        drug_count[k] = 1
+                    else:
+                        drug_count[k] += 1
+    sorted_items = sorted(drug_count.items(), key=lambda x: x[1], reverse=True)
+    sorted_items = sorted_items[:80]
+    keys = [item[0] for item in sorted_items]
+    values = [item[1] for item in sorted_items]
+
+    drugrecommendation_features_one_hot = []
+    drugrecommendation_label_one_hot = []
+
+    # generate data for each sample
+    for sample in tqdm(features, total=len(features), desc="generating medicationrecommendation data"):
+        sample_feature = []
+        label = torch.zeros(size=(1, 90))
+        for visit_index, visit in enumerate(sample):
+            if visit_index == len(sample) - 1:
+                visit_feature = visit.clone()
+                for i in range(774):   # 774 is the number of the medication features
+                    k = i + 1218    # 1218 is the index of the first medication feature
+                    if visit[0][k] != 0 and k in values:
+                        label[0][values.index(k)] = 1
+                        visit_feature[0][k] = 0
+                sample_feature.append(visit_feature)
+            else:
+                sample_feature.append(visit)
+        drugrecommendation_features_one_hot.append(sample_feature)
+        drugrecommendation_label_one_hot.append(label)
+    torch.save(drugrecommendation_features_one_hot, '../data/mimic-iv/medicationrecommendation_features_one_hot.pt')
+    torch.save(drugrecommendation_label_one_hot, '../data/mimic-iv/medicationrecommendation_label_one_hot.pt')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Data preprocessing')
+    parser.add_argument('--task', type=str, default="diagnosis prediction", help='task description')
+    args = parser.parse_args()
+
+    if args.task == "diagnosis prediction":
+        generate_one_hot()
+        generate_adjacent_list()
+        generate_paths()
+        generate_rel_index()
+    elif args.task == "medication recommendation":
+        generate_medicationrecommendation_data()
+    elif args.task == "readmission prediction":
+        generate_readmission_paths()
+        generate_readmission_rel_index()
