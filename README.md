@@ -36,7 +36,9 @@ Please use datapreprocess_iii_kg.py and datapreprocess_iv_kg.py to process knowl
 
 After processing the knowledge graph, please use datapreprocess_iii.py and datapreprocess_iv.py to process MIMIC-III and MIMIC-IV datasets:
 `datapreprocess_iii.py --task task_name`
+
 For example:
+
 `datapreprocess_iii.py --task diagnosis_prediction`
 
 ### Baseline Models
