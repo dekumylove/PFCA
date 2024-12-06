@@ -44,13 +44,22 @@ Data/
 ├── datapreprocess_iv_kg.py
 ├── datapreprocess_iv.py
 ```
-As is shown above, please store the downloaded MIMIC-III and MIMIC-IV data in the "MIMIC-III" and "MIMIC-IV" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. Please use `datapreprocess_iii_kg.py` and `datapreprocess_iv_kg.py` in the "Data" folder to process knowledge graph. To generate the adjancent matrix of the knowledge graph, just run the corresponding python file:
-1. `python datapreprocess_iii_kg.py` or `python datapreprocess_iv_kg.py`
+As is shown above, please store the downloaded MIMIC-III and MIMIC-IV data in the "MIMIC-III" and "MIMIC-IV" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. 
 
-After processing the knowledge graph, please use datapreprocess_iii.py and datapreprocess_iv.py to process MIMIC-III and MIMIC-IV datasets:
-`python datapreprocess_iii.py --task task_name`. Specifically, `task_name` represents `diagnosis_prediction`, `medication_recommendation`, or `readmission_prediction`.
+#### Processing Knowledge Graph
+To process the knowledge graph, use `datapreprocess_iii_kg.py` and `datapreprocess_iv_kg.py`. Run the corresponding Python file to generate the adjacency matrix of the knowledge graph based on MIMIC-III and MIMIC-IV datasets:
+1. For MIMIC-III adjacency matrix:
+`python datapreprocess_iii_kg.py`
+2. For MIMIC-IV adjacency matrix:
+`python datapreprocess_iii_kg.py`
 
-For example:
+### Processing MIMIC Datasets
+After processing the knowledge graph, use datapreprocess_iii.py and datapreprocess_iv.py to process MIMIC-III and MIMIC-IV datasets. Specify the task using the `--task` parameter. Available tasks are as follows:
+1. `diagnosis_prediction`
+2. `medication_recommendation`
+3. `readmission_prediction`
+
+For example, to process the MIMIC-III dataset for diagnosis prediction:
 
 `python datapreprocess_iii.py --task diagnosis_prediction`
 
