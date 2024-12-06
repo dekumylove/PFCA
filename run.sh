@@ -1,4 +1,4 @@
-################################ Section 1: Best AUC and F1 for CAPF ###############################
+################################ Section 1: Best AUC and F1 for PFCA ###############################
 ############# MIMIC-III dataset ######################
 python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
 ############# MIMIC-IV dataset ######################
@@ -15,7 +15,7 @@ python train_baseline.py --model Dip_g --input_dim 1992 --hidden_dim 256 --outpu
 ############# Retain ###############
 python train_baseline.py --model Retain --input_dim 2850 --hidden_dim 256 --output_dim 90 --data_type mimic-iii --only_dipole --decay 0.0001 -lr 0.001
 python train_baseline.py --model Retain --input_dim 1992 --hidden_dim 256 --output_dim 80 --data_type mimic-iv --only_dipole --decay 0.0001 -lr 0.001
-############# Retain ###############
+############# HAP ###############
 python train_baseline.py --model HAP --input_dim 2850 --hidden_dim 256 --output_dim 90 --data_type mimic-iii --only_dipole --decay 0.0001 -lr 0.001
 python train_baseline.py --model HAP --input_dim 1992 --hidden_dim 256 --output_dim 80 --data_type mimic-iv --only_dipole --decay 0.0001 -lr 0.001
 ############# GraphCare ###############
