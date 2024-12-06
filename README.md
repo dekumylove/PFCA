@@ -16,7 +16,7 @@ The **label** is formatted as
 ```
 [sample_num * tensor(1, target_num)]
 ```
-The graph data like **rel_index** is formatted as
+The graph data like **rel_index**, which represents paths extracted from the personalized knowledge graphs (PKGs), is formatted as
 ```
 tensor(sample_num, visit_num, feature_num, target_num, path_num, K, rel_num)
 ```
@@ -31,21 +31,21 @@ tensor(sample_num, visit_num, feature_num, target_num, path_num, K, rel_num)
 * [UMLS](https://www.nlm.nih.gov/research/umls/index.html)
 
 ### Data Preprocess
-Please use datapreprocess_iii_kg.py and datapreprocess_iv_kg.py to process knowledge graph. To generate the adjancent matrix of the knowledge graph, just run the corresponding python file:
+Please store the downloaded MIMIC-III and MIMIC-IV data in the "MIMIC-III" and "MIMIC-IV" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. Please use datapreprocess_iii_kg.py and datapreprocess_iv_kg.py to process knowledge graph. To generate the adjancent matrix of the knowledge graph, just run the corresponding python file:
 1. `python datapreprocess_iii_kg.py` or `python datapreprocess_iv_kg.py`
 
 After processing the knowledge graph, please use datapreprocess_iii.py and datapreprocess_iv.py to process MIMIC-III and MIMIC-IV datasets:
-`datapreprocess_iii.py --task task_name`
+`python datapreprocess_iii.py --task task_name`. Specifically, `task_name` represents `diagnosis_prediction`, `medication_recommendation`, or `readmission_prediction`.
 
 For example:
 
-`datapreprocess_iii.py --task diagnosis_prediction`
+`python datapreprocess_iii.py --task diagnosis_prediction`
 
 ### Baseline Models
 
 | Model                | Code                                                                                              | Reference                                                                        |
 |----------------------|---------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| LSTM                 | model/lstm.py                                                                                     | [LSTM]()                                                                         |
+| LSTM                 | model/lstm.py                                                                                     | [LSTM](https://ieeexplore.ieee.org/abstract/document/6795963)                                                                         |
 | Dipole               | model/Dipole.py                                                                                   | [Dipole](https://arxiv.org/pdf/1706.05764)                                       |
 | Retain               | model/retain.py                                                                                   | [Retain](https://arxiv.org/pdf/1608.05745)                                       |
 | HAP                  | model/HAP.py                                                                                      | [HAP](https://dl.acm.org/doi/10.1145/3394486.3403067)                            |
