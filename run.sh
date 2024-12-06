@@ -1,6 +1,6 @@
 ################################ Section 1: Best AUC and F1 for CAPF ###############################
 ############# MIMIC-III dataset ######################
-python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 2 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
 ############# MIMIC-IV dataset ######################
 python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
 
@@ -30,6 +30,6 @@ python train_baseline.py --model StageAware --input_dim 1992 --hidden_dim 256 --
 
 ############################### Section 3: Interpretation ####################################
 ############# MIMIC-III dataset ######################
-python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 2 --data_type mimic-iii --dropout_ratio 0.1 --show_interpretation --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --show_interpretation --decay 0.0001 -lr 0.001
 ############# MIMIC-IV dataset ######################
 python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --show_interpretation --decay 0.0001 -lr 0.001
