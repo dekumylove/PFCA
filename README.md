@@ -31,7 +31,20 @@ tensor(sample_num, visit_num, feature_num, target_num, path_num, K, rel_num)
 * [UMLS](https://www.nlm.nih.gov/research/umls/index.html)
 
 ### Data Preprocess
-Please store the downloaded MIMIC-III and MIMIC-IV data in the "MIMIC-III" and "MIMIC-IV" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. Please use `datapreprocess_iii_kg.py` and `datapreprocess_iv_kg.py` in the "Data" folder to process knowledge graph. To generate the adjancent matrix of the knowledge graph, just run the corresponding python file:
+```
+Data/
+├── MIMIC-III/
+│   ├── ...
+├── MIMIC-IV/
+│   ├── ...
+├── UMLS/
+│   ├── ...
+├── datapreprocess_iii_kg.py
+├── datapreprocess_iii.py
+├── datapreprocess_iv_kg.py
+├── datapreprocess_iv.py
+```
+As is shown above, please store the downloaded MIMIC-III and MIMIC-IV data in the "MIMIC-III" and "MIMIC-IV" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. Please use `datapreprocess_iii_kg.py` and `datapreprocess_iv_kg.py` in the "Data" folder to process knowledge graph. To generate the adjancent matrix of the knowledge graph, just run the corresponding python file:
 1. `python datapreprocess_iii_kg.py` or `python datapreprocess_iv_kg.py`
 
 After processing the knowledge graph, please use datapreprocess_iii.py and datapreprocess_iv.py to process MIMIC-III and MIMIC-IV datasets:
