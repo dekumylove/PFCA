@@ -57,9 +57,9 @@ For example:
 
 The running scripts are available in run.sh. 
 
-##### Best AUC and F1 for CAPF
+##### Best AUC and F1 for PFCA
 
-The running scripts are available in "Section 1: Best AUC and F1 for CAPF" of run.sh.
+The running scripts are available in "Section 1: Best AUC and F1 for PFCA" of run.sh.
 Be reminded to save the checkpoints in the format of ".ckpt" after the model is trained.
 
 #####  Best AUC and F1 for Baseline Methods
