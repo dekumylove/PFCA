@@ -8,9 +8,12 @@ from model.PKGAT import GATModel
 
 
 class DiseasePredModel(nn.Module):
-    def __init__(self, model_type: str, input_dim, output_dim, hidden_dim, embed_dim, num_path, threshold, dropout, alpha_CAPF, device_id, bi_direction=False, device=torch.device("cuda")):
+    def __init__(self, path_filtering, joint_impact, causal_analysis, input_dim, output_dim, hidden_dim, embed_dim, num_path, threshold, dropout, alpha_CAPF, device_id, bi_direction=False, device=torch.device("cuda")):
         super().__init__()
 
+        self.path_filtering = path_filtering
+        self.joint_impact = joint_impact
+        self.causal_analysis = causal_analysis
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.hidden_dim = hidden_dim
@@ -57,21 +60,29 @@ class DiseasePredModel(nn.Module):
             return self.out_activation(lstm_out)
         else:
             lstm_out = self.Wlstm(lstm_out)
-            g_i, g_c, g_t, path_attentions, causal_attentions = self.pkgat(rel_index, feat_index, h_time)
+            if self.causal_analysis:
+                g_i, g_c, g_t, path_attentions, causal_attentions = self.pkgat(rel_index, feat_index, h_time, self.path_filtering, self.joint_impact, self.causal_analysis)
 
-            kg_out_i = self.Wkg(g_i)
-            kg_out_c = self.Wkg(g_c)
-            kg_out_t = self.Wkg(g_t)
+                kg_out_i = self.Wkg(g_i)
+                kg_out_c = self.Wkg(g_c)
+                kg_out_t = self.Wkg(g_t)
 
-            final_lstm = p * lstm_out
-            final_i = final_lstm + (1 - p) * kg_out_i
-            final_c = final_lstm + (1 - p) * kg_out_c
-            final_t = final_lstm + (1 - p) * kg_out_t
-            final_i = self.out_activation(final_i)
-            final_c = self.out_activation(final_c)
-            final_t = self.out_activation(final_t)
+                final_lstm = p * lstm_out
+                final_i = final_lstm + (1 - p) * kg_out_i
+                final_c = final_lstm + (1 - p) * kg_out_c
+                final_t = final_lstm + (1 - p) * kg_out_t
+                final_i = self.out_activation(final_i)
+                final_c = self.out_activation(final_c)
+                final_t = self.out_activation(final_t)
 
-            return final_i, final_c, final_t, path_attentions, causal_attentions
+                return final_i, final_c, final_t, path_attentions, causal_attentions
+            else:
+                g_kg = self.pkgat(rel_index, feat_index, h_time, self.path_filtering, self.joint_impact, self.causal_analysis)
+                final_lstm = p * lstm_out
+                kg_out = self.Wkg(g_kg)
+                final_kg = final_lstm + (1 - p) * kg_out
+                final_kg = self.out_activation(final_kg)
+                return final_kg
         
     def interpret(self, path_attentions, causal_attentions, top_k=1):
         """

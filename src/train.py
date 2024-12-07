@@ -55,7 +55,7 @@ def evaluate(eval_model, dataloader, device, only_dipole, p, adj):
                         print(f"    Top path {i}: Attention Value = {sample_top_pathattn[index][i]}")
                         print(f"    Top path index is: {sample_top_pathindex[index][i]}")
 
-            loss = regularization_loss(output_f, output_c, output_t, y, args.Lambda, adj, eval_model, args.beta, args.batch_size)
+            loss = regularization_loss(y, args.Lambda, adj, eval_model, args.beta, args.batch_size, output_f, output_c, output_t)
             y_label.extend(np.array(y.data.cpu()))
             y_pred.extend(np.array(output_c.data.cpu()))
             total_loss += loss.item()
@@ -67,7 +67,7 @@ def evaluate(eval_model, dataloader, device, only_dipole, p, adj):
 
     return macro_auc, micro_auc, precision_mean, recall_mean, f1_mean, pr_auc
 
-def regularization_loss(output_f, output_c, output_t, target, Lambda, adj, model, beta, bs):
+def regularization_loss(target, Lambda, adj, model, beta, bs, output_f, output_c = None, output_t = None):
     hidden_size = model.hidden_dim
     W = model.dipole.rnn.weight_ih_l0
     W_ir = W[0:hidden_size, :]
@@ -82,14 +82,19 @@ def regularization_loss(output_f, output_c, output_t, target, Lambda, adj, model
             if adj[i, j] != 0:
                 for weight in W_matrix:
                     relationship_loss += torch.norm(weight[i] - weight[j], 2) ** 2
-    kl_loss = nn.KLDivLoss()
-    even_target = torch.ones(size=(target.size(0), target.size(1))) / 2
-    even_target = even_target.cuda(args.device_id)
-    loss3 = kl_loss(output_t, even_target)
-    ce_loss = nn.BCELoss()
-    loss1 = ce_loss(output_f, target)
-    loss2 = ce_loss(output_c, target)
-    total_loss = loss1 + Lambda * loss2 + Lambda * loss3 + (beta / bs) * relationship_loss
+    if args.causal_analysis: 
+        kl_loss = nn.KLDivLoss()
+        even_target = torch.ones(size=(target.size(0), target.size(1))) / 2
+        even_target = even_target.cuda(args.device_id)
+        loss3 = kl_loss(output_t, even_target)
+        ce_loss = nn.BCELoss()
+        loss1 = ce_loss(output_f, target)
+        loss2 = ce_loss(output_c, target)
+        total_loss = loss1 + Lambda * loss2 + Lambda * loss3 + (beta / bs) * relationship_loss
+    else:
+        ce_loss = nn.BCELoss()
+        loss1 = ce_loss(output_f, target)
+        total_loss = loss1 + (beta / bs) * relationship_loss
     return total_loss
 
 
@@ -139,7 +144,9 @@ def main(args, features, rel_index, feat_index, labels):
     valid_loader = DataLoader(valid_data, batch_size=args.batch_size, shuffle=True)
 
     model = DiseasePredModel(
-        model_type=args.model,
+        path_filtering=args.path_filtering,
+        joint_impact=args.joint_impact,
+        causal_analysis=args.causal_analysis,
         input_dim=args.input_dim,
         output_dim=args.output_dim,
         hidden_dim=args.hidden_dim,
@@ -176,8 +183,12 @@ def main(args, features, rel_index, feat_index, labels):
             )
             optimzer.zero_grad()
             if not args.only_dipole:
-                output_f, output_c, output_t, _, _ = model(feature_index, rel_index, feat_index, args.only_dipole, args.p)
-                loss = regularization_loss(output_f, output_c, output_t, y, args.Lambda, adj, model, args.beta, args.batch_size)
+                if args.causal_analysis:
+                    output_f, output_c, output_t, _, _ = model(feature_index, rel_index, feat_index, args.only_dipole, args.p)
+                    loss = regularization_loss(y, args.Lambda, adj, model, args.beta, args.batch_size, output_f, output_c, output_t)
+                else:
+                    output_f = model(feature_index, rel_index, feat_index, args.only_dipole, args.p)
+                    loss = regularization_loss(y, args.Lambda, adj, model, args.beta, args.batch_size, output_f)
 
             loss.backward()
 
@@ -271,6 +282,9 @@ if __name__ == "__main__":
     parser.add_argument("--only_dipole", action="store_true", default=False, help="use only diploe moudle")
     parser.add_argument("--Lambda", type=float, default=0.5, help="lambda")
     parser.add_argument("--show_interpretation", action="store_true", default=False, help="show significant paths for interpretation")
+    parser.add_argument("--joint_impact", action="store_true", default=True, help="use joint impact")
+    parser.add_argument("--path_filtering", action="store_true", default=True, help="use path filtering")
+    parser.add_argument("--causal_analysis", action="store_true", default=True, help="use causal analysis")
 
     args = parser.parse_args()
 

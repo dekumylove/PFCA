@@ -72,7 +72,7 @@ class GraphAttentionLayer(nn.Module):
             nn.Linear(self.num_feat, 1)
         )
 
-    def path_calculation_filtering(self, rel_index, feature_embed, h_time):
+    def path_calculation_filtering(self, rel_index, feature_embed, h_time, path_filtering):
         """
         This function is used to calculate the path messages and filter the paths.
         :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
@@ -87,18 +87,22 @@ class GraphAttentionLayer(nn.Module):
         rels = torch.mm(rels, params)
         rels = rels.view(bs, nv, mf, mt, np, K, self.hidden_dim, self.hidden_dim)
         M_j = torch.prod(rels, dim=-3)
-
-        # path filtering
         feat_embed_1 = feature_embed.unsqueeze(dim=-2).unsqueeze(dim=-2).repeat(1, 1, 1, mt, np, 1)
         M_j = torch.einsum('bvftpdd, bvftpd -> bvftpd', M_j, feat_embed_1)
+
+        # path filtering
         h_time_1 = h_time.unsqueeze(dim=-2).unsqueeze(dim=-2).unsqueeze(dim=-2).repeat(1, 1, mf, mt, np, 1)
         msg = torch.cat([h_time_1, M_j], dim=-1)
         msg = torch.einsum('bvftpa, a -> bvftp', msg, self.W_p)
         mask = F.gumbel_softmax(msg, hard=True)
         path_score = torch.einsum('bvftp, bvftpd -> bvftpd', mask, M_j)
         path_attn = torch.sigmoid(self.path_mlp(path_score)).squeeze(dim=-1)
-        M_j = torch.einsum('bvftp, bvftpd -> bvftd', path_attn, M_j)
-        M_j = torch.sum(M_j, dim=-2)
+        if path_filtering:
+            M_j = torch.einsum('bvftp, bvftpd -> bvftd', path_attn, M_j)
+            M_j = torch.sum(M_j, dim=-2)
+        else:
+            M_j = torch.sum(M_j, dim=-2)
+            M_j = torch.sum(M_j, dim=-2)
 
         return M_j, path_attn
     
@@ -144,7 +148,7 @@ class GraphAttentionLayer(nn.Module):
 
         return g_i, g_c, g_t, attn_causal
 
-    def forward(self, feature_embed, h_time, rel_index, intervention):
+    def forward(self, feature_embed, h_time, rel_index, path_filtering, joint_impact, causal_analysis, intervention):
         """
         :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
         :param feature_embed: feature embeddings
@@ -152,15 +156,19 @@ class GraphAttentionLayer(nn.Module):
         """
 
         # path calculation and filtering
-        M_j, path_attn = self.path_calculation_filtering(rel_index = rel_index, feature_embed = feature_embed, h_time = h_time)
+        M_j, path_attn = self.path_calculation_filtering(rel_index = rel_index, feature_embed = feature_embed, h_time = h_time, path_filtering = path_filtering)
 
         # joint impact
-        M_j = self.joint_impact(M_j = M_j)
+        if joint_impact:
+            M_j = self.joint_impact(M_j = M_j)
 
         # causal attention
-        g_i, g_c, g_t, attn_causal = self.causal_intervention(h_time = h_time, M_j = M_j, intervention = intervention)
+        if causal_analysis:
+            g_i, g_c, g_t, attn_causal = self.causal_intervention(h_time = h_time, M_j = M_j, intervention = intervention)
 
-        return g_i, g_c, g_t, path_attn, attn_causal
+            return g_i, g_c, g_t, path_attn, attn_causal
+        else:
+            return torch.sum(M_j, dim=-2)
 
 
 class GATModel(nn.Module):
@@ -206,7 +214,7 @@ class GATModel(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, rel_index, feat_index, h_time, intervention = "random_sample"):
+    def forward(self, rel_index, feat_index, h_time, path_filtering, joint_impact, causal_analysis, intervention = "random_sample"):
         """
         :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
         :param feat_index: patient feature index
@@ -217,20 +225,37 @@ class GATModel(nn.Module):
         feature_embed = torch.einsum('bvmn, nd -> bvmd', feat_index, embeds)
 
         # 2. Graph Attention Layers
-        g_i, g_c, g_t, path_attentions, causal_attentions = self.pkgat(
-            feature_embed=feature_embed,
-            h_time=h_time,
-            rel_index=rel_index,
-            intervention=intervention
-        )  # (batch_size, num_visit, hidden_dim)
+        if causal_analysis:
+            g_i, g_c, g_t, path_attentions, causal_attentions = self.pkgat(
+                feature_embed=feature_embed,
+                h_time=h_time,
+                rel_index=rel_index,
+                path_filtering=path_filtering,
+                joint_impact=joint_impact,
+                causal_analysis=causal_analysis,
+                intervention=intervention
+            )  # (batch_size, num_visit, hidden_dim)
 
-        g_i = self.output_layer(g_i)
-        g_c = self.output_layer(g_c)
-        g_t = self.output_layer(g_t)
-        g_i = torch.mean(g_i, dim=1)  # g_i: (batch_size, outfeat)
-        g_c = torch.mean(g_c, dim=1)  # g_c: (batch_size, outfeat)
-        g_t = torch.mean(g_t, dim=1)  # g_t: (batch_size, outfeat)
-        if intervention == "trivial_mean":
-            g_i = g_i + g_t
+            g_i = self.output_layer(g_i)
+            g_c = self.output_layer(g_c)
+            g_t = self.output_layer(g_t)
+            g_i = torch.mean(g_i, dim=1)  # g_i: (batch_size, outfeat)
+            g_c = torch.mean(g_c, dim=1)  # g_c: (batch_size, outfeat)
+            g_t = torch.mean(g_t, dim=1)  # g_t: (batch_size, outfeat)
+            if intervention == "trivial_mean":
+                g_i = g_i + g_t
 
-        return g_i, g_c, g_t, path_attentions, causal_attentions
+            return g_i, g_c, g_t, path_attentions, causal_attentions
+        else:
+            g_kg = self.self.pkgat(
+                feature_embed=feature_embed,
+                h_time=h_time,
+                rel_index=rel_index,
+                path_filtering=path_filtering,
+                joint_impact=joint_impact,
+                causal_analysis=causal_analysis,
+                intervention=intervention
+            )  # (batch_size, num_visit, hidden_dim)
+            g_kg = self.output_layer(g_kg)
+            g_kg = torch.mean(g_kg, dim=1)  # g_i: (batch_size, outfeat)
+            return g_kg

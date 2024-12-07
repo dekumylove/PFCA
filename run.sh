@@ -4,7 +4,50 @@ python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 -
 ############# MIMIC-IV dataset ######################
 python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
 
-################################ Section 2: Best AUC and F1 for Baseline Methods #################################
+################################ Section 2: Hyperparameter Study for PFCA ###############################
+############################## Lambda ##################################
+############# MIMIC-III dataset ######################
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.1 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.3 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.7 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.9 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+############# MIMIC-IV dataset ######################
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.1 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.3 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.7 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.9 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+############################## K ##################################
+############# MIMIC-III dataset ######################
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 1 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 2 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 4 --data_type mimic-iii --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+############# MIMIC-IV dataset ######################
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 1 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 2 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 4 --data_type mimic-iv --dropout_ratio 0.1 --decay 0.0001 -lr 0.001
+
+################################ Section 3: Ablation Study for PFCA ###############################
+############################## Path Filtering ##################################
+############# MIMIC-III dataset ######################
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --path_filtering false --decay 0.0001 -lr 0.001
+############# MIMIC-IV dataset ######################
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --path_filtering false --decay 0.0001 -lr 0.001
+############################## Causal Analysis ##################################
+############# MIMIC-III dataset ######################
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --causal_analysis false --decay 0.0001 -lr 0.001
+############# MIMIC-IV dataset ######################
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --causal_analysis false --decay 0.0001 -lr 0.001
+############################## Joint Impact ##################################
+############# MIMIC-III dataset ######################
+python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --joint_impact false --decay 0.0001 -lr 0.001
+############# MIMIC-IV dataset ######################
+python train.py --model PFCA --input_dim 1992 --hidden_dim 256 --output_dim 80 --lambda 0.5 --K 3 --data_type mimic-iv --dropout_ratio 0.1 --joint_impact false --decay 0.0001 -lr 0.001
+
+################################ Section 4: Best AUC and F1 for Baseline Methods #################################
 #####################Please modify the input data according to the needs of different models #####################
 ############# Lstm ###############
 python train_baseline.py --model LSTM --input_dim 2850 --hidden_dim 256 --output_dim 90 --data_type mimic-iii --only_dipole --decay 0.0001 -lr 0.001
@@ -28,7 +71,7 @@ python train_baseline.py --model MedPath --input_dim 1992 --hidden_dim 256 --out
 python train_baseline.py --model StageAware --input_dim 2850 --hidden_dim 256 --output_dim 90 --data_type mimic-iii --lambda_HAR 0.1 --dropout_ratio 0.2 --decay 0.0001 v
 python train_baseline.py --model StageAware --input_dim 1992 --hidden_dim 256 --output_dim 80 --data_type mimic-iv --lambda_HAR 0.1 --dropout_ratio 0.2 --decay 0.0001 -lr 0.005
 
-############################### Section 3: Interpretation ####################################
+############################### Section 5: Interpretation ####################################
 ############# MIMIC-III dataset ######################
 python train.py --model PFCA --input_dim 2850 --hidden_dim 256 --output_dim 90 --lambda 0.5 --K 3 --data_type mimic-iii --dropout_ratio 0.1 --show_interpretation --decay 0.0001 -lr 0.001
 ############# MIMIC-IV dataset ######################
