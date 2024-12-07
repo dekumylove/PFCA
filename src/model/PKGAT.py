@@ -74,6 +74,7 @@ class GraphAttentionLayer(nn.Module):
 
     def path_calculation_filtering(self, rel_index, feature_embed, h_time):
         """
+        This function is used to calculate the path messages and filter the paths.
         :param rel_index: extracted paths in the personalized knowledge graphs (PKGs)
         :param feature_embed: feature embeddings
         :param h_time: patient hidden states obtained from the time-series module
@@ -103,6 +104,7 @@ class GraphAttentionLayer(nn.Module):
     
     def joint_impact(self, M_j):
         """
+        This function is used to calculate the joint impact of patient features.
         :param M_j: messages transmitted through paths
         """
         bs, nv, mf, hd = M_j.size()
@@ -117,6 +119,7 @@ class GraphAttentionLayer(nn.Module):
     
     def causal_intervention(self, h_time, M_j, intervention = "random_sample"):
         """
+        This function is used to conduct the causal intervention.
         :param M_j: messages transmitted through paths
         :param h_time: patient hidden states obtained from the time-series module
         """
@@ -224,9 +227,9 @@ class GATModel(nn.Module):
         g_i = self.output_layer(g_i)
         g_c = self.output_layer(g_c)
         g_t = self.output_layer(g_t)
-        g_i = torch.mean(g_i, dim=1)  # h_f: (batch_size, outfeat)
-        g_c = torch.mean(g_c, dim=1)  # h_c: (batch_size, outfeat)
-        g_t = torch.mean(g_t, dim=1)  # h_t: (batch_size, outfeat)
+        g_i = torch.mean(g_i, dim=1)  # g_i: (batch_size, outfeat)
+        g_c = torch.mean(g_c, dim=1)  # g_c: (batch_size, outfeat)
+        g_t = torch.mean(g_t, dim=1)  # g_t: (batch_size, outfeat)
         if intervention == "trivial_mean":
             g_i = g_i + g_t
 

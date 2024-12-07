@@ -30,7 +30,7 @@ class StageAware(nn.Module):
         self.emb = Embedding(self.input_dim, self.hidden_dim)
 
         self.r = nn.ParameterList()
-            self.r.append(nn.Parameter(torch.rand(self.hidden_dim)))
+        self.r.append(nn.Parameter(torch.rand(self.hidden_dim)))
 
         self.W = nn.ParameterList()
         for _ in range(num_rel):
@@ -64,7 +64,7 @@ class StageAware(nn.Module):
         h_time = torch.mean(h_time, dim=1)
         hidden_state_1 = h_time.unsqueeze(dim = 1).repeat(1, self.num_rel, 1)
 
-        ## relation-level attn
+        # relation-level attn
         r = torch.stack([param for param in self.r], dim = 0)
         bs = features.size(0)
         r = r.unsqueeze(dim = 0).repeat(bs, 1, 1)
@@ -74,7 +74,7 @@ class StageAware(nn.Module):
         a_r_i = a_r_i.unsqueeze(dim=1).unsqueeze(dim=1).unsqueeze(dim=1).repeat(1, self.num_visit, self.max_feat, self.max_target, 1)
         a_r_i = torch.einsum('bvftr, bvftr -> bvftr', rel_index, a_r_i)
 
-        ##node-level attn
+        # node-level attn
         feat_emb = torch.einsum('bvmf, fd -> bvmd', feat_index, self.emb.embedding.weight)
         neighbor_emb = torch.einsum('bvmtf, fd -> bvmtd', neighbor_index, self.emb.embedding.weight)
         a_n_3 = torch.einsum('dd, bd -> bd', self.W_n, h_time).unsqueeze(dim=1).unsqueeze(dim=1).unsqueeze(dim=1).repeat(1, self.num_visit, self.max_feat, self.max_target, 1)
@@ -82,7 +82,7 @@ class StageAware(nn.Module):
         a_n = torch.einsum('d, bvftd -> bvft', self.w_n, a_n)
         a_n = self.softmax(self.leakyrelu(a_n))
 
-        #message passing
+        # message passing
         weights = [param for param in self.W]
         weights = torch.stack(weights, dim=0)
         weights = weights.view(self.num_rel, -1)
@@ -91,7 +91,7 @@ class StageAware(nn.Module):
         rel_weight = rel_weight.view(bs, self.num_visit, self.max_feat, self.max_target, self.hidden_dim, self.hidden_dim)
         msg = torch.einsum('bvftdd, bvftd -> bvftd', rel_weight, neighbor_emb)
 
-        #hierarchical message aggregation
+        # hierarchical message aggregation
         h_n = torch.einsum('bvft, bvftd -> bvftd', a_n, msg)
         h_n = h_n.unsqueeze(dim=-2).repeat(1, 1, 1, 1, self.num_rel, 1)
         h_n = torch.einsum('bvftr, bvftrd -> bvftd', a_r_i, h_n)

@@ -82,6 +82,7 @@ class GraphAttentionLayer(nn.Module):
         params = params.view(self.num_rel, -1)
         bs, nv, mf, mt, np, K, nr = rel_index.size()
 
+        # path calculation
         rels = rel_index.view(-1, nr)
         rels = torch.mm(rels, params)
         rels = rels.view(bs, nv, mf, mt, np, K, self.hidden_dim, self.hidden_dim)

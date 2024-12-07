@@ -61,20 +61,20 @@ class GraphCare(nn.Module):
         :param neighbor_index: prediction targets multi-hot vector
         :param rel_index: relations types between patient features and target features
         """
-        #node-level attn
+        # node-level attn
         alpha = torch.einsum('n, bvmn -> bvm', self.W_alpha, feat_index)
         alpha = self.softmax(alpha + self.b_alpha.view(1, 1, -1))
         
-        #visit-level attn
+        # visit-level attn
         beta = self.tanh(torch.einsum('m, bvm -> bv', self.W_beta, alpha) + self.b_beta.view(1, -1))
         beta = torch.einsum('n, bn -> bn', self.lamb, beta)
 
-        #node aggregation
+        # node aggregation
         reduced_emb = torch.einsum('ih, rh -> ir', self.emb.embedding.weight, self.W_v) + self.b_v.view(1, -1)
         neighbor_emb = torch.einsum('bvmtn, nr -> bvmtr', neighbor_index, reduced_emb)
         attn = torch.einsum('bnm, bn -> bnm', alpha, beta)
         node_agg = torch.einsum('bnm, bnmtr -> bnmtr', attn, neighbor_emb)
-        #edge aggregation
+        # edge aggregation
         edge = torch.stack([param for param in self.W], dim=0)
         reduced_edge = torch.einsum('nh, rh -> nr', edge, self.W_r) + self.b_r.view(1, -1)
         edge_agg = torch.einsum('bvftr, rd -> bvftd', rel_index, reduced_edge)

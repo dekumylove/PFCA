@@ -380,13 +380,13 @@ if __name__ == '__main__':
     parser.add_argument('--task', type=str, default="diagnosis prediction", help='task description')
     args = parser.parse_args()
 
-    if args.task == "diagnosis prediction":
-        generate_one_hot()
+    generate_one_hot()
+    if args.task == "diagnosis_prediction":
         generate_adjacent_list()
         generate_paths()
         generate_rel_index()
-    elif args.task == "medication recommendation":
+    elif args.task == "medication_recommendation":
         generate_medicationrecommendation_data()
-    elif args.task == "readmission prediction":
+    elif args.task == "readmission_prediction":
         generate_readmission_paths()
         generate_readmission_rel_index()

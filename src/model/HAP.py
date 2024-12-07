@@ -74,10 +74,10 @@ class HAP(nn.Module):
         attn_p2c = self.softmax(attn_p2c)
         attn_c2p = self.softmax(attn_c2p)
 
-        # up-to-bottom
+        # up-to-bottom propagation
         G = torch.einsum('bvcf, bvfd -> bvcd', attn_c2p, parent_emb)
 
-        # bottom-to-up
+        # bottom-to-up propagation
         G = torch.einsum('bvfc, bvcd -> bvfd', attn_p2c, G)
 
         v_t = torch.sum(G, dim = -2)
