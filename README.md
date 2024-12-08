@@ -86,11 +86,11 @@ Be reminded to save the checkpoints in the format of ".ckpt" after the model is 
 
 #####  Best AUC and F1 for Baseline Methods
 
-The running scripts are available in "Section 2: Best AUC and F1 for Baseline Methods" of run.sh.
+The running scripts are available in "Section 4: Best AUC and F1 for Baseline Methods" of run.sh.
 
 ##### Interpretation
 
-The running scripts are available in "Section 3: Interpretation" of run.sh.
+The running scripts are available in "Section 5: Interpretation" of run.sh.
 The significant paths and the corresponding attention values will be printed out during the evaluate stage.
 
 #### Requirement
