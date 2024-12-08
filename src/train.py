@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from Dataset import DiseasePredDataset, read_data
+from Dataset import DiseasePredDataset
 from model.DiseasePredModel import DiseasePredModel
 from utils import llprint, get_accuracy
 
@@ -25,17 +25,22 @@ if not os.path.exists(path):
     os.makedirs(path)
 
 def check_gradients(model):
+    """Debug function to check gradient flow in the model"""
     for name, param in model.named_parameters():
         if param.grad is not None:
             print(f'{name}, grad_fn={param.grad_fn}, grad={param.grad.data.sum()}')
 
 def evaluate(eval_model, dataloader, device, only_dipole, p, adj):
+    """
+    Evaluate the model on validation/test data
+    """
     eval_model.eval()
     y_label = []
     y_pred = []
     total_loss = 0
     with torch.no_grad():
         for idx, batch in enumerate(dataloader):
+            # Move batch data to GPU
             feature_index, rel_index, feat_index, y = batch
             feature_index, rel_index, feat_index, y = (
                 feature_index.cuda(args.device_id),
@@ -43,11 +48,17 @@ def evaluate(eval_model, dataloader, device, only_dipole, p, adj):
                 feat_index.cuda(args.device_id),
                 y.cuda(args.device_id)
             )
+            
+            # Get model predictions
             output_f, output_c, output_t, path_attentions, causal_attentions = eval_model(
                 feature_index, rel_index, feat_index, only_dipole, p
             )
+            
+            # Show interpretation if enabled
             if args.show_interpretation:
-                sample_top_pathattn, sample_top_pathindex = eval_model.interpret(path_attentions, causal_attentions)
+                sample_top_pathattn, sample_top_pathindex = eval_model.interpret(
+                    path_attentions, causal_attentions
+                )
                 for index, sample in enumerate(sample_top_pathattn):
                     print(f"Sample {idx * args.batch_size + index}:")
                     top_pi = sample_top_pathindex[index]
@@ -67,7 +78,11 @@ def evaluate(eval_model, dataloader, device, only_dipole, p, adj):
 
     return macro_auc, micro_auc, precision_mean, recall_mean, f1_mean, pr_auc
 
-def regularization_loss(target, Lambda, adj, model, beta, bs, output_f, output_c = None, output_t = None):
+def regularization_loss(target, Lambda, adj, model, beta, bs, output_f, output_c=None, output_t=None):
+    """
+    Calculate total loss including prediction/causal loss, intervention loss and trivial loss
+    """
+    # Extract weight matrices from the model
     hidden_size = model.hidden_dim
     W = model.dipole.rnn.weight_ih_l0
     W_ir = W[0:hidden_size, :]
@@ -82,7 +97,9 @@ def regularization_loss(target, Lambda, adj, model, beta, bs, output_f, output_c
             if adj[i, j] != 0:
                 for weight in W_matrix:
                     relationship_loss += torch.norm(weight[i] - weight[j], 2) ** 2
-    if args.causal_analysis: 
+
+    # Calculate total loss based on model configuration
+    if args.causal_analysis:
         kl_loss = nn.KLDivLoss()
         even_target = torch.ones(size=(target.size(0), target.size(1))) / 2
         even_target = even_target.cuda(args.device_id)
@@ -103,6 +120,9 @@ def collate_fn(data):
 
 
 def main(args, features, rel_index, feat_index, labels):
+    """
+    Main function to train and evaluate the model
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: ", device)
 
@@ -252,7 +272,7 @@ def main(args, features, rel_index, feat_index, labels):
 
 
 if __name__ == "__main__":
-
+    # Parse command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",

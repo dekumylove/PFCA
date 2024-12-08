@@ -26,6 +26,9 @@ if not os.path.exists(path):
     os.makedirs(path)
 
 def evaluate(eval_model, dataloader, device, only_dipole, p):
+    """
+    Evaluate the model on validation/test data
+    """
     eval_model.eval()
     y_label = []
     y_pred = []
@@ -60,6 +63,9 @@ def evaluate(eval_model, dataloader, device, only_dipole, p):
     return macro_auc, micro_auc, precision_mean, recall_mean, f1_mean, pr_auc
 
 def regularization_loss(output, target):
+    """
+    Calculate prediction loss
+    """
     ce_loss = nn.BCELoss()
     loss = ce_loss(output, target)
 
@@ -70,6 +76,9 @@ def collate_fn(data):
 
 
 def main(args, p, p2c, features, rel_index, neighbor_index, feat_index, labels):
+    """
+    Main function to train and evaluate the model
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: ", device)
 
@@ -220,7 +229,7 @@ def main(args, p, p2c, features, rel_index, neighbor_index, feat_index, labels):
 
 
 if __name__ == "__main__":
-
+    # Parse command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",
