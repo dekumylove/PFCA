@@ -84,6 +84,14 @@ The running scripts are available in run.sh.
 The running scripts are available in "Section 1: Best AUC and F1 for PFCA" of run.sh.
 Be reminded to save the checkpoints in the format of ".ckpt" after the model is trained.
 
+##### Hyperparameter Study for PFCA
+
+The running scripts are available in "Section 2: Hyperparameter Study for PFCA" of run.sh.
+
+##### Ablation Study for PFCA
+
+The running scripts are available in "Section 3: Ablation Study for PFCA" of run.sh.
+
 #####  Best AUC and F1 for Baseline Methods
 
 The running scripts are available in "Section 4: Best AUC and F1 for Baseline Methods" of run.sh.
