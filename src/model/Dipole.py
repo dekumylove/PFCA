@@ -3,9 +3,22 @@ import torch.nn.functional as F
 from torch import nn as nn
 from torch.nn.parameter import Parameter
 
+"""
+This module implements three variants of the Dipole attention mechanism for sequential data:
+- Location-based attention (Dip_l)
+- General attention (Dip_g)
+- Concatenation-based attention (Dip_c)
+
+Each model uses a GRU as the base encoder and implements different attention mechanisms
+for capturing temporal dependencies in the input sequence.
+"""
 
 class Dip_l(nn.Module):
-    # Dipole - Location-based Attention
+    """
+    Location-based Attention Dipole model.
+    This model learns attention weights based purely on the hidden state positions,
+    without considering the hidden state content.
+    """
     def __init__(self, input_dim, output_dim, hidden_dim, bi_direction=False, device=torch.device('cuda'), activation='sigmoid'):
         super(Dip_l, self).__init__()
         self.input_dim = input_dim
@@ -54,7 +67,11 @@ class Dip_l(nn.Module):
 
 
 class Dip_g(nn.Module):
-    # Dipole - General Attention
+    """
+    General Attention Dipole model.
+    This model learns attention weights using a learned linear transformation
+    between the query (last hidden state) and keys (all hidden states).
+    """
     def __init__(self, input_dim, output_dim, hidden_dim, bi_direction=False, device=torch.device('cuda'), activation='sigmoid'):
         super(Dip_g, self).__init__()
         self.input_dim = input_dim
@@ -107,7 +124,11 @@ class Dip_g(nn.Module):
 
 
 class Dip_c(nn.Module):
-    # Dipole - concatenation-based Attention
+    """
+    Concatenation-based Attention Dipole model.
+    This model learns attention weights by concatenating each hidden state
+    with the last hidden state, followed by a non-linear transformation.
+    """
     def __init__(self, input_dim, output_dim, hidden_dim, max_timesteps, bi_direction=False, device=torch.device('cuda'), activation='sigmoid'):
         super(Dip_c, self).__init__()
         self.input_dim = input_dim

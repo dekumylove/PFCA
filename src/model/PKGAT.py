@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-import time
 import torch.nn.functional as F
 
 
@@ -19,7 +18,7 @@ class Embedding(nn.Module):
     def forward(self, x):
         emb = self.embedding(x)
 
-        return emb  # F*E
+        return emb
 
 
 class GraphAttentionLayer(nn.Module):
@@ -257,5 +256,5 @@ class GATModel(nn.Module):
                 intervention=intervention
             )  # (batch_size, num_visit, hidden_dim)
             g_kg = self.output_layer(g_kg)
-            g_kg = torch.mean(g_kg, dim=1)  # g_i: (batch_size, outfeat)
+            g_kg = torch.mean(g_kg, dim=1)  # g_kg: (batch_size, outfeat)
             return g_kg

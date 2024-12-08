@@ -1,8 +1,6 @@
 import torch
 import torch.nn.functional as F
 from torch import nn as nn
-from torch.nn.parameter import Parameter
-
 
 class Retain(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim, bi_direction=False, device=torch.device('cuda'),
@@ -41,7 +39,6 @@ class Retain(nn.Module):
             self.out_activation = nn.Softmax(1)
 
     def forward(self, x):
-        device = self.device
         self.alpha_gru.flatten_parameters()
         self.beta_gru.flatten_parameters()
 
