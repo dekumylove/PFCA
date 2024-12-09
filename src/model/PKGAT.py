@@ -54,7 +54,7 @@ class GraphAttentionLayer(nn.Module):
         self.num_rel = nrelation
         self.num_path = num_path
         self.hidden_dim = hidden_dim
-        self.num_feat = ninfeat  # 特征的数量
+        self.num_feat = ninfeat
         self.W_p = nn.Parameter(torch.ones(hidden_dim+noutfeat))
         self.b_p = nn.Parameter(torch.ones(1))
         self.sigmoid = nn.Sigmoid()
