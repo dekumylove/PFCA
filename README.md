@@ -33,9 +33,9 @@ tensor(sample_num, visit_num, feature_num, target_num, path_num, K, rel_num)
 ### Data Preprocess
 ```
 Data/
-├── MIMIC-III/
+├── mimic-iii/
 │   ├── ...
-├── MIMIC-IV/
+├── mimic-iv/
 │   ├── ...
 ├── UMLS/
 │   ├── ...
@@ -44,7 +44,7 @@ Data/
 ├── datapreprocess_iv_kg.py
 ├── datapreprocess_iv.py
 ```
-As is shown above, please store the downloaded MIMIC-III and MIMIC-IV data in the "MIMIC-III" and "MIMIC-IV" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. 
+As is shown above, please store the downloaded MIMIC-III and MIMIC-IV data in the "mimic-iii" and "mimic-iv" directories within the "Data" folder. Similarly, place the UMLS knowledge graph in the "UMLS" directory inside the "Data" folder. 
 
 #### Processing Knowledge Graph
 To process the knowledge graph, use `datapreprocess_iii_kg.py` and `datapreprocess_iv_kg.py`. Run the corresponding Python file to generate the adjacency matrix of the knowledge graph based on MIMIC-III and MIMIC-IV datasets:
