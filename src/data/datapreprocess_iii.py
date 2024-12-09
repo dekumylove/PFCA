@@ -87,8 +87,8 @@ def generate_one_hot():
     print(len(features_one_hot_list), len(label_one_hot_list))
     assert len(features_one_hot_list) == len(label_one_hot_list)
 
-    torch.save(features_one_hot_list, 'data/mimic-iii/features_one_hot.pt')
-    torch.save(label_one_hot_list, 'data/mimic-iii/label_one_hot.pt')
+    torch.save(features_one_hot_list, '../data/mimic-iii/features_one_hot.pt')
+    torch.save(label_one_hot_list, '../data/mimic-iii/label_one_hot.pt')
 
 def generate_adjacent_list():
     """load adjacent matrix and convert matrix to adjacent list"""
@@ -276,7 +276,7 @@ def generate_readmission_paths():
     """generate_readmission_paths"""
     K = 3 #path's length
     features = torch.load('readmission_features_one_hot.pt')
-    with open('adjacent_list.pkl', 'rb') as f:
+    with open('../data/mimic-iii/adjacent_list.pkl', 'rb') as f:
         adj_list = pickle.load(f)
 
     def find_all_paths(start_idx, target_idx, path=[]):
@@ -311,7 +311,7 @@ def generate_readmission_paths():
                     visit_paths[i] = all_paths
             sample_paths.append(visit_paths)
         paths.append(sample_paths)
-    with open(f'readmission_paths_{K}.pkl', 'wb') as e:
+    with open(f'../data/mimic-iii/readmission_paths_{K}.pkl', 'wb') as e:
         pickle.dump(paths, e)
 
 def generate_readmission_rel_index(num_feat = 2850, max_feat = 16, num_rel = 12, K = 3, num_path = 12, num_target = 90):
@@ -323,9 +323,9 @@ def generate_readmission_rel_index(num_feat = 2850, max_feat = 16, num_rel = 12,
     :param num_target:        The maximum number of the target linked with a feature
     :param num_path:          The maximum number of paths linked with a feature
     """
-    with open(f'readmission_paths_{K}.pkl', 'rb') as f:
+    with open(f'../data/mimic-iii/readmission_paths_{K}.pkl', 'rb') as f:
         paths3 = pickle.load(f)
-    with open('adjacent_matrix.pkl', 'rb') as f:
+    with open('../data/mimic-iii/adjacent_matrix.pkl', 'rb') as f:
         adj = pickle.load(f)
     rel_index = []
     feat_index = []
@@ -372,8 +372,8 @@ def generate_readmission_rel_index(num_feat = 2850, max_feat = 16, num_rel = 12,
         rel_index.append(sample_rel)
     print(len(rel_index))
     print(len(feat_index))
-    torch.save(rel_index, f'readmission_rel_index_{K}.pt')
-    torch.save(feat_index, f'readmission_feat_index_{K}.pt')
+    torch.save(rel_index, f'../data/mimic-iii/readmission_rel_index_{K}.pt')
+    torch.save(feat_index, f'../data/mimic-iii/readmission_feat_index_{K}.pt')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Data preprocessing')
