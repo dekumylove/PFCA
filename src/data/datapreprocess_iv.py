@@ -87,8 +87,8 @@ def generate_one_hot():
     print(len(features_one_hot_list), len(label_one_hot_list))
     assert len(features_one_hot_list) == len(label_one_hot_list)
 
-    torch.save(features_one_hot_list, 'data/mimic-iv/features_one_hot.pt')
-    torch.save(label_one_hot_list, 'data/mimic-iv/label_one_hot.pt')
+    torch.save(features_one_hot_list, '../data/mimic-iv/features_one_hot.pt')
+    torch.save(label_one_hot_list, '../data/mimic-iv/label_one_hot.pt')
 
 def generate_adjacent_list():
     """load adjacent matrix and convert matrix to adjacent list"""
@@ -157,7 +157,7 @@ def generate_paths(K=3):
                 
             sample_paths.append(visit_paths)
         paths.append(sample_paths)
-    with open(f'paths_{K}.pkl', 'wb') as e:
+    with open(f'../data/mimic-iv/paths_{K}.pkl', 'wb') as e:
         pickle.dump(paths, e)
 
 def generate_rel_index(num_feat = 1992, max_feat = 12, num_rel = 12, K = 2, num_path = 8, max_target = 12):
@@ -301,52 +301,6 @@ def generate_knowledge_driven_data(max_feat = 32, num_feat = 1992, max_target = 
     with open('../data/mimic-iv/neighbor_index.pkl', 'wb') as f:
         pickle.dump(neighbor_index, f)
 
-def generate_knowledge_driven_data():
-    """
-    generate graphcare, har, medpath data
-    :param num_feat:          The number of the medical feature
-    :param max_feat:          The maximum number of the patient feature in a visit
-    :param num_rel:           The number of the relation types
-    :param max_target:        The maximum number of the target linked with a feature
-    """
-
-    features = torch.load('../data/mimic-iv/features_one_hot.pt')
-    drug_count = {}
-    for sample in features:
-        for visit in sample:
-            for i in range(774):
-                if visit[0][1218+i] != 0:
-                    k = 1218+i
-                    if k not in drug_count:
-                        drug_count[k] = 1
-                    else:
-                        drug_count[k] += 1
-    sorted_items = sorted(drug_count.items(), key=lambda x: x[1], reverse=True)
-    sorted_items = sorted_items[:80]
-    keys = [item[0] for item in sorted_items]
-    values = [item[1] for item in sorted_items]
-
-    drugrecommendation_features_one_hot = []
-    drugrecommendation_label_one_hot = []
-    for sample in tqdm(features, total=len(features), desc="generating knowledge_driven data"):
-        sample_feature = []
-        label = torch.zeros(size=(1, 80))
-        for visit_index, visit in enumerate(sample):
-            if visit_index == len(sample) - 1:
-                visit_feature = visit.clone()
-                for i in range(774):    # 774 is the number of the medication features
-                    k = i + 1218    # # 1218 is the index of the first medication feature
-                    if visit[0][k] != 0 and k in values:
-                        label[0][values.index(k)] = 1
-                        visit_feature[0][k] = 0
-                sample_feature.append(visit_feature)
-            else:
-                sample_feature.append(visit)
-        drugrecommendation_features_one_hot.append(sample_feature)
-        drugrecommendation_label_one_hot.append(label)
-    torch.save(drugrecommendation_features_one_hot, '../data/mimic-iv/drugrecommendation_features_one_hot.pt')
-    torch.save(drugrecommendation_label_one_hot, '../data/mimic-iv/drugrecommendation_label_one_hot.pt')   
-
 def generate_readmission_paths():
     """generate paths for readmission"""
     K = 3 #path's length
@@ -386,7 +340,7 @@ def generate_readmission_paths():
                     visit_paths[i] = all_paths
             sample_paths.append(visit_paths)
         paths.append(sample_paths)
-    with open(f'readmission_paths_{K}.pkl', 'wb') as e:
+    with open(f'../data/mimic-iv/readmission_paths_{K}.pkl', 'wb') as e:
         pickle.dump(paths, e)
 
 def generate_readmission_rel_index(num_feat = 1992, max_feat = 16, num_rel = 12, K = 3, num_path = 12, num_target = 80):
@@ -398,9 +352,9 @@ def generate_readmission_rel_index(num_feat = 1992, max_feat = 16, num_rel = 12,
     :param num_target:        The maximum number of the target linked with a feature
     :param num_path:          The maximum number of paths linked with a feature
     """
-    with open(f'readmission_paths_{K}_rocauc.pkl', 'rb') as f:
+    with open(f'../data/mimic-iv/readmission_paths_{K}_rocauc.pkl', 'rb') as f:
         paths3 = pickle.load(f)
-    with open('adjacent_matrix.pkl', 'rb') as f:
+    with open('../data/mimic-iv/adjacent_matrix.pkl', 'rb') as f:
         adj = pickle.load(f)
     rel_index = []
     feat_index = []
@@ -447,8 +401,8 @@ def generate_readmission_rel_index(num_feat = 1992, max_feat = 16, num_rel = 12,
         rel_index.append(sample_rel)
     print(len(rel_index))
     print(len(feat_index))
-    torch.save(rel_index, f'readmission_rel_index_{K}.pt')
-    torch.save(feat_index, f'readmission_feat_index_{K}.pt')
+    torch.save(rel_index, f'../data/mimic-iv/readmission_rel_index_{K}.pt')
+    torch.save(feat_index, f'../data/mimic-iv/readmission_feat_index_{K}.pt')
 
 def generate_medicationrecommendation_data():
     """generate medication recommendation data"""
