@@ -36,7 +36,7 @@ def filter_visits(ratio = 0.7):
     filtered_visits_df = pd.DataFrame(filtered_visit, columns = ['subject_id', 'hadm_id'])
     filtered_visits_df_no_dup = filtered_visits_df.drop_duplicates()
     print(len(filtered_visits_df), len(filtered_visits_df_no_dup))
-    filtered_visits_df.to_csv(f'data/mimic-iv/filtered_visits_{ratio}_iv.csv')
+    filtered_visits_df.to_csv(f'../data/mimic-iv/filtered_visits_{ratio}_iv.csv')
 
 # generate samples according to the visits filtered
 def generate_sample():
