@@ -31,11 +31,13 @@ def read_data(feature_file, label_file, device):
 
 
 class DiseasePredDataset(TensorDataset):
-    def __init__(self, features, rel_index, feat_index, targets):
+    def __init__(self, features, feat_index, path_index, path_structure, path_target, targets):
         super().__init__()
         self.data = features
-        self.rel_index = rel_index
         self.feat_index = feat_index
+        self.path_index = path_index
+        self.path_structure = path_structure
+        self.path_target = path_target
         self.targets = targets
 
     def __len__(self):
@@ -45,12 +47,17 @@ class DiseasePredDataset(TensorDataset):
         features = self.data
         features = features[index]
         features = torch.cat(features, dim=0)
-        rel_index = self.rel_index
-        rel_index = rel_index[index]
-
         feat_index = self.feat_index
         feat_index = feat_index[index]
+        path_index = self.path_index
+        path_index = path_index[index]
+
+        path_structure = self.path_structure
+        path_structure = path_structure[index]
+
+        path_target = self.path_target
+        path_target = path_target[index]
 
         y = self.targets[index]
         y = y.squeeze(dim=0)
-        return features, rel_index, feat_index, y
+        return features, feat_index, path_index, path_structure, path_target, y
