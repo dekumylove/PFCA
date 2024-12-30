@@ -105,25 +105,27 @@ def generate_adjacent_list():
     with open('../data/mimic-iv/adjacent_list.pkl', 'wb') as e:
         pickle.dump(adj_list, e)
 
-def generate_paths(K=3):
+def generate_path_data(K = 3, max_feat = 8, max_path = 8, num_rel = 12, num_feat = 1992, num_visit = 6, num_target = 80):
     """
-    generate path using the adjacent list
-    :param K: The length of the path
+    generate path data including feat_index, path_index, path_target, and path_structure
+    :param num_feat:          The number of the medical feature
+    :param max_feat:          The maximum number of the patient feature in a visit
+    :param num_rel:           The number of the relation types
+    :param K:                 The length of the path
+    :param num_path:          The maximum number of the paths linked with a feature
+    :param max_path:          The maximum number of the paths linked with a feature
+    :param num_visit:         The number of visit recorded in a sample
+    :param num_target:        The number of label
     """
-
-    features = torch.load('../data/mimic-iv/features_one_hot.pt')
     with open('../data/mimic-iv/adjacent_list.pkl', 'rb') as f:
         adj_list = pickle.load(f)
-
+    with open('../data/mimic-iv/adjacent_matrix.pkl', 'rb') as f:
+        adj = pickle.load(f)
+    features = torch.load('../data/mimic-iv/features_one_hot.pt')
     top = pd.read_csv('../data/mimic-iv/top_diagnoses.csv')
-    icd = top['Diagnosis']
-    target_idx = []
-    for i in icd:
-        for k, v in code_map.items():
-            key = k.split('_')[0]
-            if i == key:
-                target_idx.append(v)
-                break
+    top = top.sort_values('Diagnosis')
+    icd = top.iloc[0:90]['Diagnosis']
+    target_idx = [code_map[i] for i in icd]
 
     def find_all_paths(start_idx, path=[]):
         path = path + [start_idx]
@@ -140,10 +142,11 @@ def generate_paths(K=3):
                 new_paths = find_all_paths(node, path)
                 for p in new_paths:
                     paths.append(p)
-                    if len(paths) > 3:
+                    if len(paths) > K:
                         return paths
         return paths
 
+    total_path = 0
     paths = []
     for sample in tqdm(features, total = len(features), desc = 'generating paths'):
         sample_paths = []
@@ -153,96 +156,72 @@ def generate_paths(K=3):
                 if visit[0][i] != 0:
                     all_paths = []
                     all_paths = find_all_paths(i)
+                    total_path += len(all_paths)
                     visit_paths[i] = all_paths
-                
             sample_paths.append(visit_paths)
+        sample_paths = sample_paths[::-1]   # Place paths in reverse chronological order
         paths.append(sample_paths)
-    with open(f'../data/mimic-iv/paths_{K}.pkl', 'wb') as e:
-        pickle.dump(paths, e)
-
-def generate_rel_index(num_feat = 1992, max_feat = 12, num_rel = 12, K = 2, num_path = 8, max_target = 12):
-    """
-    generate relation index
-    :param num_feat:          The number of the medical feature
-    :param max_feat:          The maximum number of the patient feature in a visit
-    :param num_rel:           The number of the relation types
-    :param K:                 The length of the path
-    :param num_path:          The maximum number of the paths linked with a feature
-    :param max_target:        The maximum number of the target linked with a feature
-    """
-
-    with open(f'../data/mimic-iv/paths_{K}.pkl', 'rb') as f:
-        paths3 = pickle.load(f)
-    with open('../data/mimic-iv/adjacent_matrix.pkl', 'rb') as f:
-        adj = pickle.load(f)
-    rel_index = []
+    # feat_index: [sample_num * tensor(num_visit, max_feat, num_feat)]
+    # path_index: [sample_num * tensor(num_visit, max_feat, max_path(path_id))] start from 1
+    # path_target: [sample_num * tensor(num_path, num_target)]
+    # path_structure: [sample_num * tensor(num_path, K, num_rel)]
+    # num_path = num_visit * max_feat * max_path
     feat_index = []
-    paths = []
-    for sample in tqdm(paths3, total = len(paths3)):
-        sample_rel = []
-        sample_feat = []
-        sample_path = []
+    path_index = []
+    path_target = []
+    path_structure = []
+    for sample in tqdm(paths, total = len(paths), desc = "generating relation"):
+        sample_path_index = []
+        sample_feat_index = []
+        sample_path_target = torch.zeros(num_visit * max_feat * max_path, num_target)
+        sample_path_structure = torch.zeros(num_visit * max_feat * max_path, K, num_rel)
+        sample_path_count = 1
         for visit in sample:
-            visit_rel = torch.zeros(size=(max_feat, max_target, num_path, K, num_rel))
+            visit_path_index = torch.zeros(size=(max_feat, max_path))
+            visit_feat_index = torch.zeros(size=(max_feat, num_feat))
             visit_feat = []
-            real_feat = torch.zeros(size=(max_feat, num_feat))
-            visit_path = [[] for i in range(max_feat)]
             for k, v in visit.items():
                 ok = k
+                feat_path_count = 0
                 if k not in visit_feat:
                     if len(visit_feat) >= max_feat:
                         break
                     visit_feat.append(k)
                 k = visit_feat.index(k)
-                real_feat[k][ok] = 1
-                target_ = []
+                visit_feat_index[k][ok] = 1
                 for path_idx, path in enumerate(v):
-                    if path_idx < num_path:
+                    if feat_path_count < max_path:
                         target = path[-1]
-                        if target not in target_:
-                            target_.append(target)
-                            if len(target_) > max_target:
-                                break
-                        target = target_.index(target)
-                        for path_index in range(num_path):
-                            slice_tensor = visit_rel[:, :, path_index, :, :]
-                            if torch.sum(slice_tensor).item() == 0:
-                                visit_path[k].append(path)
-                                for i in range(len(path) - 1):
-                                    visit_rel[k][target][path_index][i][int(adj[path[i]][path[i+1]])] = 1
-                                if len(path) - 1 < K:
-                                    for j in range(K - len(path) + 1):
-                                        visit_rel[k][target][path_index][len(path) - 1 + j][0] = 1
-                                break
+                        target_index = target_idx.index(target)
+                        sample_path_target[sample_path_count][target_index] = 1
+
+                        visit_path_index[k][feat_path_count] = sample_path_count
+
+                        for i in range(len(path) - 1):
+                            sample_path_structure[sample_path_count][i][int(adj[path[i]][path[i+1]])] = 1
+                        if len(path) - 1 < K:
+                            for j in range(K - len(path) + 1):
+                                sample_path_structure[sample_path_count][len(path) - 1 + j][0] = 1
                     else:
                         break
-            sample_feat.append(real_feat)
-            sample_rel.append(visit_rel)
-            sample_path.append(visit_path)
-        sample_feat = torch.stack(sample_feat, dim=0)
-        feat_index.append(sample_feat)
-        sample_rel = torch.stack(sample_rel, dim=0)
-        rel_index.append(sample_rel)
-        paths.append(sample_path)
-    torch.save(rel_index, f'../data/mimic-iv/rel_index_{K}.pt')
-    torch.save(feat_index, f'../data/mimic-iv/feat_index_{K}.pt')
-                    
-def filter_label():
-    """filter label that is imbalanced to measure the metrics"""
 
-    labels = torch.load('../data/mimic-iv/label_one_hot.pt')
-    labels_C = torch.cat(labels, dim = 0)
-    labels_C = torch.sum(labels_C, dim = 0)
-    values, indices = torch.topk(labels_C, 10, largest=False)
-    filter_idx = indices.tolist()
-    new_labels = []
-    for l in labels:
-        mask = torch.ones(l.size(1), dtype=torch.bool)
-        mask[filter_idx] = False
-        filtered_l = l[0][mask]
-        new_labels.append(filtered_l)
-
-    torch.save(new_labels, '../data/mimic-iv/new_label_one_hot.pt')
+                    sample_path_count += 1
+                    feat_path_count += 1
+            sample_feat_index.append(visit_feat_index)
+            sample_path_index.append(visit_path_index)
+        sample_feat_index = torch.stack(sample_feat_index, dim=0)
+        sample_path_index = torch.stack(sample_path_index, dim=0)
+        feat_index.append(sample_feat_index)
+        path_index.append(sample_path_index)
+        path_target.append(sample_path_target)
+        path_structure.append(sample_path_structure)
+    try:
+        torch.save(feat_index, f'../data/mimic-iv/dp_feat_index_{K}.pt')
+        torch.save(path_index, f'../data/mimic-iv/dp_path_index_{K}.pt')
+        torch.save(path_target, f'../data/mimic-iv/dp_path_target_{K}.pt')
+        torch.save(path_structure, f'../data/mimic-iv/dp_path_structure_{K}.pt')
+    except Exception as err:
+        print(f'fail to save file:{err}')
 
 def generate_knowledge_driven_data(max_feat = 32, num_feat = 1992, max_target = 8, num_rel = 11):
     """
@@ -299,14 +278,25 @@ def generate_knowledge_driven_data(max_feat = 32, num_feat = 1992, max_target = 
     with open('../data/mimic-iv/rel_index.pkl', 'wb') as f:
         pickle.dump(rel_index, f)
     with open('../data/mimic-iv/neighbor_index.pkl', 'wb') as f:
-        pickle.dump(neighbor_index, f)
+        pickle.dump(neighbor_index, f) 
 
-def generate_readmission_paths():
-    """generate paths for readmission"""
-    K = 3 #path's length
-    features = torch.load('readmission_features_one_hot.pt')
-    with open('adjacent_list.pkl', 'rb') as f:
+def generate_readmission_path_data(K = 3, max_feat = 8, max_path = 8, num_rel = 12, num_feat = 1992, num_visit = 6, num_target = 80):
+    """
+    generate readmission prediction path data including feat_index, path_index, path_target, and path_structure
+    :param num_feat:          The number of the medical feature
+    :param max_feat:          The maximum number of the patient feature in a visit
+    :param num_rel:           The number of the relation types
+    :param K:                 The length of the path
+    :param num_path:          The maximum number of the paths linked with a feature
+    :param max_path:          The maximum number of the paths linked with a feature
+    :param num_visit:         The number of visit recorded in a sample
+    :param num_target:        The number of label
+    """
+    with open('../data/mimic-iv/adjacent_list.pkl', 'rb') as f:
         adj_list = pickle.load(f)
+    with open('../data/mimic-iv/adjacent_matrix.pkl', 'rb') as f:
+        adj = pickle.load(f)
+    features = torch.load('../data/mimic-iv/features_one_hot.pt')
 
     def find_all_paths(start_idx, target_idx, path=[]):
         path = path + [start_idx]
@@ -327,82 +317,84 @@ def generate_readmission_paths():
                         return paths
         return paths
 
+    total_path = 0
     paths = []
-    for sample in tqdm(features, total = len(features), desc = 'generating readmission paths'):
+    for sample in tqdm(features, total = len(features), desc = 'generating paths'):
         sample_paths = []
         for visit in sample:
+            # target_idx for readmission
             target_idx = [i for i in range(visit.shape[1]) if visit[0][i] != 0]
             visit_paths = {}
             for i in range(visit.shape[1]):
                 if visit[0][i] != 0:
                     all_paths = []
                     all_paths = find_all_paths(i, target_idx)
+                    total_path += len(all_paths)
                     visit_paths[i] = all_paths
             sample_paths.append(visit_paths)
+        sample_paths = sample_paths[::-1]   # Place paths in reverse chronological order
         paths.append(sample_paths)
-    with open(f'../data/mimic-iv/readmission_paths_{K}.pkl', 'wb') as e:
-        pickle.dump(paths, e)
 
-def generate_readmission_rel_index(num_feat = 1992, max_feat = 16, num_rel = 12, K = 3, num_path = 12, num_target = 80):
-    """
-    generate relation index for readmission
-    :param num_feat:          The number of the medical feature
-    :param max_feat:          The maximum number of the patient feature in a visit
-    :param num_rel:           The number of the relation types
-    :param num_target:        The maximum number of the target linked with a feature
-    :param num_path:          The maximum number of paths linked with a feature
-    """
-    with open(f'../data/mimic-iv/readmission_paths_{K}_rocauc.pkl', 'rb') as f:
-        paths3 = pickle.load(f)
-    with open('../data/mimic-iv/adjacent_matrix.pkl', 'rb') as f:
-        adj = pickle.load(f)
-    rel_index = []
+    # feat_index: [sample_num * tensor(num_visit, max_feat, num_feat)]
+    # path_index: [sample_num * tensor(num_visit, max_feat, max_path(path_id))] start from 1
+    # path_target: [sample_num * tensor(num_path, num_target)]
+    # path_structure: [sample_num * tensor(num_path, K, num_rel)]
+    # num_path = num_visit * max_feat * max_path
     feat_index = []
-    for sample in tqdm(paths3, total = len(paths3)):
-        sample_rel = []
-        sample_feat = []
+    path_index = []
+    path_target = []
+    path_structure = []
+    for sample in tqdm(paths, total = len(paths), desc = "generating relation"):
+        sample_path_index = []
+        sample_feat_index = []
+        sample_path_target = torch.zeros(num_visit * max_feat * max_path, num_target)
+        sample_path_structure = torch.zeros(num_visit * max_feat * max_path, K, num_rel)
+        sample_path_count = 1
         for visit in sample:
-            visit_rel = torch.zeros(size=(max_feat, num_target, num_path, K, num_rel))
+            visit_path_index = torch.zeros(size=(max_feat, max_path))
+            visit_feat_index = torch.zeros(size=(max_feat, num_feat))
             visit_feat = []
-            real_feat = torch.zeros(size=(max_feat, num_feat))
             for k, v in visit.items():
                 ok = k
+                feat_path_count = 0
                 if k not in visit_feat:
                     if len(visit_feat) >= max_feat:
                         break
                     visit_feat.append(k)
                 k = visit_feat.index(k)
-                real_feat[k][ok] = 1
-                target_ = []
+                visit_feat_index[k][ok] = 1
                 for path_idx, path in enumerate(v):
-                    if path_idx < num_path:
+                    if feat_path_count < max_path:
                         target = path[-1]
-                        if target not in target_:
-                            target_.append(target)
-                            if len(target_) > num_target:
-                                break
-                        target = target_.index(target)
-                        for path_index in range(num_path):
-                            slice_tensor = visit_rel[:, :, path_index, :, :]
-                            if torch.sum(slice_tensor).item() == 0:
-                                for i in range(len(path) - 1):
-                                    visit_rel[k][target][path_index][i][int(adj[path[i]][path[i+1]])] = 1
-                                if len(path) - 1 < K:
-                                    for j in range(K - len(path) + 1):
-                                        visit_rel[k][target][path_index][len(path) - 1 + j][0] = 1
-                                break
+                        target_index = target_idx.index(target)
+                        sample_path_target[sample_path_count][target_index] = 1
+
+                        visit_path_index[k][feat_path_count] = sample_path_count
+
+                        for i in range(len(path) - 1):
+                            sample_path_structure[sample_path_count][i][int(adj[path[i]][path[i+1]])] = 1
+                        if len(path) - 1 < K:
+                            for j in range(K - len(path) + 1):
+                                sample_path_structure[sample_path_count][len(path) - 1 + j][0] = 1
                     else:
                         break
-            sample_feat.append(real_feat)
-            sample_rel.append(visit_rel)
-        sample_feat = torch.stack(sample_feat, dim=0)
-        feat_index.append(sample_feat)
-        sample_rel = torch.stack(sample_rel, dim=0)
-        rel_index.append(sample_rel)
-    print(len(rel_index))
-    print(len(feat_index))
-    torch.save(rel_index, f'../data/mimic-iv/readmission_rel_index_{K}.pt')
-    torch.save(feat_index, f'../data/mimic-iv/readmission_feat_index_{K}.pt')
+                    sample_path_count += 1
+                    feat_path_count += 1
+            sample_feat_index.append(visit_feat_index)
+            sample_path_index.append(visit_path_index)
+        sample_feat_index = torch.stack(sample_feat_index, dim=0)
+        sample_path_index = torch.stack(sample_path_index, dim=0)
+        feat_index.append(sample_feat_index)
+        path_index.append(sample_path_index)
+        path_target.append(sample_path_target)
+        path_structure.append(sample_path_structure)
+    try:
+        torch.save(feat_index, f'../data/mimic-iv/rp_feat_index_{K}.pt')
+        torch.save(path_index, f'../data/mimic-iv/rp_path_index_{K}.pt')
+        torch.save(path_target, f'../data/mimic-iv/rp_path_target_{K}.pt')
+        torch.save(path_structure, f'../data/mimic-iv/rp_path_structure_{K}.pt')
+    except Exception as err:
+        print(f'fail to save file:{err}')
 
 def generate_medicationrecommendation_data():
     """generate medication recommendation data"""
@@ -454,10 +446,8 @@ if __name__ == '__main__':
     if args.task == "diagnosis prediction":
         generate_one_hot()
         generate_adjacent_list()
-        generate_paths()
-        generate_rel_index()
+        generate_path_data()
     elif args.task == "medication recommendation":
         generate_medicationrecommendation_data()
     elif args.task == "readmission prediction":
-        generate_readmission_paths()
-        generate_readmission_rel_index()
+        generate_readmission_path_data()
