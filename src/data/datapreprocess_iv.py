@@ -223,63 +223,6 @@ def generate_path_data(K = 3, max_feat = 8, max_path = 8, num_rel = 12, num_feat
     except Exception as err:
         print(f'fail to save file:{err}')
 
-def generate_knowledge_driven_data(max_feat = 32, num_feat = 1992, max_target = 8, num_rel = 11):
-    """
-    generate graphcare, har, medpath data
-    :param num_feat:          The number of the medical feature
-    :param max_feat:          The maximum number of the patient feature in a visit
-    :param num_rel:           The number of the relation types
-    :param max_target:        The maximum number of the target linked with a feature
-    """
-
-    with open('../data/mimic-iv/adjacent_matrix.pkl', 'rb') as f:
-        adj = pickle.load(f)
-    features = torch.load('../data/mimic-iv/features_one_hot.pt')
-
-    # generate feat_index
-    feat_index = []
-    rel_index = []
-    neighbor_index = []
-    for sample in tqdm(features, total=len(features), desc="generating feat_index"):
-        sample_f_index = []
-        sample_n_index = []
-        sample_r_index = []
-        for visit in sample:
-            visit_f_index = torch.zeros(size=(max_feat, num_feat))
-            visit_n_index = torch.zeros(size=(max_feat, max_target, num_feat))
-            visit_r_index = torch.zeros(size=(max_feat, max_target, num_rel))
-            feat_num = 0
-            for i in range(visit.shape[1]):
-                if visit[0][i] != 0:
-                    visit_f_index[feat_num][i] = 1
-                    target_num = 0
-                    for j in range(adj.shape[1]):
-                        if adj[i][j] != 0:
-                            visit_n_index[feat_num][target_num][j] = 1
-                            visit_r_index[feat_num][target_num][int(adj[i][j]) - 1] = 1
-                            target_num += 1
-                            if target_num >= max_target:
-                                break
-                    feat_num += 1
-                    if feat_num >= max_feat:
-                        break
-            sample_f_index.append(visit_f_index)
-            sample_n_index.append(visit_n_index)
-            sample_r_index.append(visit_r_index)
-        sample_f_index = torch.stack(sample_f_index, dim=0)
-        sample_n_index = torch.stack(sample_n_index, dim=0)
-        sample_r_index = torch.stack(sample_r_index, dim=0)
-        feat_index.append(sample_f_index)
-        rel_index.append(sample_r_index)
-        neighbor_index.append(sample_n_index)
-
-    with open('../data/mimic-iv/feat_index.pkl', 'wb') as f:
-        pickle.dump(feat_index, f)
-    with open('../data/mimic-iv/rel_index.pkl', 'wb') as f:
-        pickle.dump(rel_index, f)
-    with open('../data/mimic-iv/neighbor_index.pkl', 'wb') as f:
-        pickle.dump(neighbor_index, f) 
-
 def generate_readmission_path_data(K = 3, max_feat = 8, max_path = 8, num_rel = 12, num_feat = 1992, num_visit = 6, num_target = 80):
     """
     generate readmission prediction path data including feat_index, path_index, path_target, and path_structure
