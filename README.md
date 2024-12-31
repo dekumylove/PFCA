@@ -16,9 +16,9 @@ The **label** is formatted as
 ```
 [sample_num * tensor(1, target_num)]
 ```
-The graph data like **rel_index**, which represents paths extracted from the personalized knowledge graphs (PKGs), is formatted as
+The graph data like **path_index**, which represents paths extracted from the personalized knowledge graphs (PKGs), is formatted as
 ```
-tensor(sample_num, visit_num, feature_num, target_num, path_num, K, rel_num)
+tensor(sample_num, visit_num, feature_num, path_num)
 ```
 
 ### Benchmark Datasets
